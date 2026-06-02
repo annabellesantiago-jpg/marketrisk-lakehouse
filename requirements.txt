@@ -1,0 +1,8 @@
+yfinance==0.2.54
+pandas==2.2.3
+boto3==1.35.99
+python-dotenv==1.0.1
+dbt-core==1.11.8
+dbt-databricks==1.11.7
+fastmcp==0.4.1
+databricks-sql-connector==3.5.0

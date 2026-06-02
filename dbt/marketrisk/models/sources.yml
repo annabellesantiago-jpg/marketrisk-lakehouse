@@ -1,0 +1,85 @@
+version: 2
+
+sources:
+  - name: bronze
+    catalog: market_risk_dev
+    schema: bronze
+    description: > 
+      Raw data loaded into S3 via COPY INTO. 
+      No transformation is applied - data is exactly as received from source system. 
+      Ingested by Databricks Bronze Notebook (01_bronze_ingest)
+    tables:
+      - name: market_prices
+        description: >
+          Raw market prices from Yahoo Finance. 
+          One row per ticker per trading day including nulls for weekends and holidays.
+          Source files: s3://market-risk-dev-raw-593153124201-ap-southeast-2-an/prices/
+        columns:
+          - name: Date
+            description: Trading date as received from Yahoo Finance API
+          - name: Open
+            description: Opening price in local currency
+          - name: High
+            description: Intraday high price in local currency
+          - name: Low
+            description: Intraday low price in local currency
+          - name: Close
+            description: Closing price in local currency
+          - name: Volume
+            description: Volume traded. Null or zero for FX pairs.
+          - name: ticker
+            description: Yahoo Finance ticker symbol e.g. AAPL, EURUSD=X
+          - name: _ingested_at
+            description: Timestamp when row was loaded into Bronze via COPY INTO
+      - name: positions
+        description: >
+          Synthetic trading book with 300 positions across 4 desks.
+          Simulates a real trade booking system output.
+          Source file: s3://market-risk-dev-raw/positions/
+        columns:
+          - name: trade_id
+            description: Unique trade identifier — primary key
+          - name: desk
+            description: Trading desk — FX Desk, Equity Desk, Rates Desk, Credit Desk
+          - name: counterparty
+            description: Counterparty name
+          - name: asset_class
+            description: Asset class — FX, Equity, Rates, Credit
+          - name: ticker
+            description: Instrument ticker symbol
+          - name: direction
+            description: LONG or SHORT
+          - name: notional
+            description: Notional value in local currency
+          - name: currency
+            description: Local currency of the notional
+          - name: trade_date
+            description: Date trade was booked
+          - name: maturity_date
+            description: Date when trade matures
+      - name: desk_limits
+        description: >
+          Risk limits per trading desk in USD.
+          Used in exposure monitoring to calculate utilisation percentage.
+          Source file: s3://market-risk-dev-raw/reference/desk_limits.csv
+        columns:
+          - name: desk
+            description: Trading desk name — matches desk column in positions table
+          - name: limit_usd
+            description: Risk limit in USD
+          - name: effective_date
+            description: Date the limit became effective
+          - name: review_date
+            description: Date the limit is next reviewed
+      - name: fx_rates
+        description: >
+          FX conversion rates vs USD for reference data.
+          Used to convert all position notionals to USD for risk aggregation.
+          Source file: s3://market-risk-dev-raw/reference/fx_rates.csv
+        columns:
+          - name: currency
+            description: Currency code e.g. EUR, GBP, JPY
+          - name: rate_vs_usd
+            description: Exchange rate vs USD. Multiply notional by this to convert to USD.
+          - name: as_of_date
+            description: Date the rate is valid for

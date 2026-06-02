@@ -1,0 +1,268 @@
+version: 2
+
+models:
+  - name: var_daily
+    description: >
+      Daily VaR, 10-day VaR and Expected Shortfall by desk and asset class.
+      Historical simulation using 260 trading days of price returns.
+      Grain: One row per desk per asset_class per calculation_date
+      Source: silver.positions_enriched + silver.prices_cleaned
+    columns:
+      - name: calculation_date
+        description: Date Value at Risk was calculated
+        data_tests:
+           - not_null
+      - name: desk
+        description: Trading desk name
+        data_tests:
+           - not_null
+      - name: asset_class
+        description: Asset class (FX, Equity, Rates, Credit)
+        data_tests:
+           - not_null
+           - accepted_values:
+                arguments:
+                   values: ['FX', 'Equity', 'Rates', 'Credit']
+      - name: position_count
+        description: Number of positions in this desk/asset_class group
+        data_tests:
+           - not_null
+      - name: total_notional_usd
+        description: Total notional exposure in USD for this group
+        data_tests:
+           - not_null
+      - name: var_95_usd
+        description: 1-day VaR at 95th percentile — 1 in 20 days loss threshold. Internal management use.
+        data_tests:
+           - not_null
+      - name: var_97_5_usd
+        description: 1-day VaR at 97.5th percentile — Basel III / FRTB standard confidence level.
+        data_tests:
+           - not_null
+      - name: var_99_usd
+        description: 1-day VaR at 99th percentile — 1 in 100 days loss threshold. Senior management use.
+        data_tests:
+           - not_null
+      - name: var_10day_95_usd
+        description: 10-day VaR at 95th percentile. Derived as var_95 × √10. Basel III regulatory capital input.
+        data_tests:
+           - not_null
+      - name: var_10day_97_5_usd
+        description: 10-day VaR at 97.5th percentile. Derived as var_97_5 × √10. Primary Basel III capital measure.
+        data_tests:
+           - not_null
+      - name: var_10day_99_usd
+        description: 10-day VaR at 99th percentile. Derived as var_99 × √10.
+        data_tests:
+           - not_null
+      - name: es_97_5_usd
+        description: Expected Shortfall at 97.5th percentile. Average loss on days exceeding var_97_5. FRTB primary regulatory measure.
+        data_tests:
+           - not_null
+      - name: avg_daily_return_usd
+        description: Average daily P&L across all 260 scenarios for this group
+      - name: worst_day_loss_usd
+        description: Largest single-day loss in the 260-day history
+      - name: best_day_gain_usd
+        description: Largest single-day gain in the 260-day history
+      - name: scenario_count
+        description: Number of historical scenarios used. Should be ~260		
+        data_tests:
+           - not_null
+      - name: _gold_loaded_at
+        description: Timestamp when row was loaded into Gold
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - desk
+              - asset_class
+              - calculation_date
+
+  - name: var_backtest
+    description: >
+      Backtest daily VaR predictions against actual P&L and apply
+      Basel traffic light assessment based on 250-day rolling exceptions
+      Grain: One row per desk per backtest_date
+      Source: gold.var_daily + gold.pnl_attribution
+    columns:
+      - name: backtest_date
+        description: Date of the backtest observation
+        data_tests:
+           - not_null
+      - name: desk
+        description: Trading desk name
+        data_tests:
+           - not_null
+      - name: var_97_5_usd
+        description: 1-day VaR at 97.5th percentile used in this backtest observation
+        data_tests:
+           - not_null
+      - name: actual_loss_usd
+        description: Actual loss on this date. Positive = loss day. Negative = gain day.
+        data_tests:
+           - not_null
+      - name: is_exception
+        description: True when actual loss exceeded VaR — a backtesting exception
+        data_tests:
+           - not_null
+           - accepted_values:
+                arguments:
+                   values: [true, false]
+      - name: exception_magnitude
+        description: How much the actual loss exceeded VaR. Null when is_exception = false.
+      - name: rolling_250d_exceptions
+        description: Count of exceptions in the rolling 250 trading day window — Basel standard
+      - name: basel_zone
+        description: >
+                    Basel traffic light zone based on rolling exceptions:
+                    GREEN (0-4 exceptions), AMBER (5-9), RED (10+)
+        data_tests:
+           - not_null
+           - accepted_values:
+                arguments:
+                   values: ['GREEN', 'AMBER', 'RED']
+      - name: model_status
+        description: Model assessment (ACCEPTED, REVIEW, REJECTED) based on basel_zone and internal risk appetite
+        data_tests:
+           - not_null
+           - accepted_values:
+                arguments:
+                   values: ['ACCEPTED', 'REVIEW', 'REJECTED']
+      - name: _gold_loaded_at
+        description: Timestamp when row was loaded into Gold
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - desk
+              - backtest_date
+
+  - name: pnl_attribution
+    description: >
+      Attribute daily P&L to market moves vs unexplained factors by desk and asset class.
+      Grain: One row per desk per pnl_date
+      Source: gold.var_daily + gold.pnl_attribution
+    columns:
+      - name: pnl_date
+        description: Date PnL was calculated
+        data_tests:
+           - not_null
+      - name: desk
+        description: Trading desk name
+        data_tests:
+           - not_null
+      - name: hypothetical_pnl_usd
+        description: PnL explained purely by market price moves — clean P&L
+        data_tests:
+           - not_null
+      - name: actual_pnl_usd
+        description: Total PnL including all factors
+        data_tests:
+           - not_null
+      - name: unexplained_pnl_usd
+        description: Actual minus hypothetical. Large values are a red flag.
+        data_tests:
+           - not_null
+      - name: position_count
+        description: Number of positions contributing to PnL
+        data_tests:
+           - not_null
+      - name: long_pnl_usd
+        description: PnL contribution from LONG positions only
+        data_tests:
+           - not_null
+      - name: short_pnl_usd
+        description: PnL contribution from SHORT positions only
+        data_tests:
+           - not_null
+      - name: _gold_loaded_at
+        description: Timestamp when row was loaded into Gold
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - desk
+              - pnl_date
+
+  - name: exposure_monitor
+    description: >
+      Daily limit utilisation and breach monitoring by desk. Traffic light status (GREEN/AMBER/RED) for reporting layer.
+      Status logic:
+        GREEN  — utilisation_pct < 80  — within safe operating range
+        AMBER  — utilisation_pct >= 80 and < 100  — approaching limit, early warning
+        RED    — utilisation_pct >= 100  — limit breached, immediate action required
+      Grain: One row per desk per as_of_date
+      Source: silver.positions_enriched + bronze.desk_limits
+    columns:
+      - name: as_of_date
+        description: Date exposure was calculated
+        data_tests:
+           - not_null
+      - name: desk
+        description: Trading desk name
+        data_tests:
+           - not_null
+      - name: gross_exposure_usd
+        description: Sum of absolute notional values across all positions regardless of direction
+        data_tests:
+           - not_null
+      - name: net_exposure_usd
+        description: Sum of signed exposures — LONG positive, SHORT negative
+        data_tests:
+           - not_null
+      - name: limit_usd
+        description: Risk limit for this desk in USD from bronze.desk_limits
+        data_tests:
+           - not_null
+      - name: utilisation_pct
+        description: Gross exposure as percentage of limit. 100 = at limit. Above 100 = breach.
+        data_tests:
+           - not_null
+      - name: limit_status
+        description: >
+          Traffic light status based on utilisation percentage.
+          GREEN = below 80%, AMBER = 80<=100%, RED = >= 100%
+        data_tests:
+           - not_null
+           - accepted_values:
+                arguments:
+                   values: ['GREEN', 'AMBER', 'RED']
+      - name: warning_flag
+        description: >
+          Flag indicating if the desk is approaching its risk limit.
+          True when utilisation_pct >= 80 and < 100
+        data_tests:
+           - not_null
+           - accepted_values:
+                arguments:
+                   values: [true, false]
+      - name: breach_flag
+        description: >
+          Flag indicating if the desk has breached its risk limit.
+          True when utilisation_pct >= 100
+        data_tests:
+           - not_null           
+           - accepted_values:
+                arguments:
+                   values: [true, false]
+      - name: long_exposure_usd
+        description: Total exposure from LONG positions only
+        data_tests:
+           - not_null
+      - name: short_exposure_usd
+        description: Total exposure from SHORT positions only
+        data_tests:
+           - not_null
+      - name: position_count
+        description: Total number of positions for this desk
+        data_tests:
+           - not_null
+      - name: _gold_loaded_at
+        description: Timestamp when row was loaded into Gold
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - desk
+              - as_of_date

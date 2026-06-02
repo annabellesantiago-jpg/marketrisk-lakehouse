@@ -1,0 +1,12 @@
+ticker,sector,geography
+AAPL,Technology,US
+MSFT,Technology,US
+JPM,Financial Services,US
+GS,Financial Services,US
+HSBA_L,Financial Services,UK
+SAN_MC,Financial Services,Europe
+EURUSD,FX,Europe
+GBPUSD,FX,UK
+JPYUSD,FX,Asia
+SGDUSD,FX,Asia
+AUDUSD,FX,Australia

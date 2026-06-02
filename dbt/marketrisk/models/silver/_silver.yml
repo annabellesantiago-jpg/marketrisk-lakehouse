@@ -1,0 +1,87 @@
+version: 2
+
+models:
+
+  - name: prices_cleaned
+    description: >
+      Deduplicated and cleaned daily market prices.
+      One row per ticker per trading day.
+      Weekends, holidays and null prices removed.
+      Source: bronze.market_prices
+    columns:
+      - name: price_date
+        description: Trading date — weekends and holidays excluded
+        data_tests:
+          - not_null
+      - name: close_price
+        description: Closing price in local currency — primary price for VaR calculations
+        data_tests:
+          - not_null
+      - name: ticker
+        description: Yahoo Finance ticker symbol
+        data_tests:
+          - not_null
+      - name: open_price
+        description: Opening price in local currency
+        data_tests:
+          - not_null
+      - name: high_price
+        description: Intraday high price in local currency
+        data_tests:
+          - not_null
+      - name: low_price
+        description: Intraday low price in local currency
+        data_tests:
+          - not_null
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - ticker
+              - price_date
+
+  - name: positions_enriched
+    description: >
+      Trading positions enriched with FX rates and latest market prices.
+      All monetary values normalised to USD.
+      One row per trade_id.
+      Source: bronze.positions + bronze.fx_rates + silver.prices_cleaned
+    columns:
+      - name: trade_id
+        description: Unique trade identifier — primary key
+        data_tests:
+          - not_null
+          - unique
+      - name: desk
+        description: Trading desk name
+        data_tests:
+          - not_null
+          - accepted_values:
+               arguments:
+                  values: ['FX Desk', 'Equity Desk', 'Rates Desk', 'Credit Desk']
+      - name: direction
+        description: Trade direction
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                 values: ['LONG', 'SHORT']
+      - name: notional_usd
+        description: Notional value converted to USD
+        data_tests:
+          - not_null
+      - name: fx_rate_vs_usd
+        description: FX rate used for USD conversion
+        data_tests:
+          - not_null
+      - name: net_exposure_usd
+        description: Signed exposure in USD — positive for LONG, negative for SHORT
+        data_tests:
+          - not_null
+      - name: direction_multiplier
+        description: 1 for LONG, -1 for SHORT
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                 values: [1, -1]

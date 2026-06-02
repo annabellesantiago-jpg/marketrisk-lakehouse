@@ -1,0 +1,40 @@
+# -- ignore credentials -- NEVER COMMIT CREDENTIALS TO GIT --
+.env
+
+# -- ignore python virtual environment --
+venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# -- ignore generated data files --
+data/
+
+# -- ignore generated logs --
+logs/
+
+# -- ignore generated dbt files --
+dbt/marketrisk/target/
+dbt/marketrisk/dbt_packages/
+dbt/marketrisk/logs/
+dbt/marketrisk/.user.yml
+
+# -- ignoe Airflow runtime files --
+airflow/airflow.db
+airflow/airflow.cfg
+airflow/logs/
+airflow/webserver_config.py
+airflow/dags/__pycache__/
+
+# -- ignore Docker volumes and images --
+monitoring/grafana/data
+monitoring/prometheus/data
+
+# ── VS Code (optional — remove these 2 lines if you want to commit settings)
+.vscode/
+
+# ── OS files ──────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+Thumbs.db:encryptable
+desktop.ini

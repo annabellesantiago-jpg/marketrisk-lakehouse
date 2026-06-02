@@ -1,0 +1,25 @@
+scenario_name,asset_class,shock_pct,shock_bps,scenario_type,is_stressed_var_proxy
+2008 GFC,Equity,-0.40,,REGULATORY,true
+2008 GFC,FX,-0.15,,REGULATORY,true
+2008 GFC,Rates,,300,REGULATORY,true
+2008 GFC,Credit,,500,REGULATORY,true
+2020 COVID,Equity,-0.30,,REGULATORY,false
+2020 COVID,FX,-0.10,,REGULATORY,false
+2020 COVID,Rates,,-150,REGULATORY,false
+2020 COVID,Credit,,350,REGULATORY,false
+1997 Asian Crisis,Equity,-0.50,,REGULATORY,false
+1997 Asian Crisis,FX,-0.25,,REGULATORY,false
+1997 Asian Crisis,Rates,,400,REGULATORY,false
+1997 Asian Crisis,Credit,,600,REGULATORY,false
+Rates Shock +200bps,Equity,0.00,,REGULATORY,false
+Rates Shock +200bps,FX,0.00,,REGULATORY,false
+Rates Shock +200bps,Rates,,200,REGULATORY,false
+Rates Shock +200bps,Credit,,0,REGULATORY,false
+Equity Crash -30%,Equity,-0.30,,MANAGEMENT,false
+Equity Crash -30%,FX,0.00,,MANAGEMENT,false
+Equity Crash -30%,Rates,,0,MANAGEMENT,false
+Equity Crash -30%,Credit,,0,MANAGEMENT,false
+USD Strengthens +10%,Equity,0.00,,MANAGEMENT,false
+USD Strengthens +10%,FX,-0.10,,MANAGEMENT,false
+USD Strengthens +10%,Rates,,0,MANAGEMENT,false
+USD Strengthens +10%,Credit,,0,MANAGEMENT,false
