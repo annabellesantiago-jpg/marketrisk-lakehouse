@@ -230,7 +230,7 @@ def generate_book() -> pd.DataFrame:
                 "currency":        instrument["currency"],
                 "trade_date":      trade_date.strftime("%Y-%m-%d"),
                 "maturity_date":   maturity_date.strftime("%Y-%m-%d"),
-                "_generated_at":   pd.Timestamp.utcnow().isoformat(),
+                "generated_at":   pd.Timestamp.utcnow().isoformat(),
             })
             counter += 1
 

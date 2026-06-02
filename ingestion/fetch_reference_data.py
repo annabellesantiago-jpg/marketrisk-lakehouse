@@ -108,7 +108,7 @@ def generate_desk_limits() -> pd.DataFrame:
             "limit_currency": "USD",
             "effective_date": effective_date,
             "review_date":    review_date,
-            "_generated_at":  datetime.utcnow().isoformat(),
+            "generated_at":  datetime.utcnow().isoformat(),
         }
         for desk, limit in DESK_LIMITS.items()
     ]
@@ -127,7 +127,7 @@ def generate_fx_rates(rates: dict) -> pd.DataFrame:
             "currency":      ccy,
             "rate_vs_usd":   data["rate"],
             "as_of_date":    data["as_of"],
-            "_generated_at": datetime.now(timezone.utc),
+            "generated_at": datetime.now(timezone.utc),
         }
         for ccy, data in rates.items()
     ]
@@ -137,7 +137,7 @@ def generate_fx_rates(rates: dict) -> pd.DataFrame:
         "currency":      "USD",
         "rate_vs_usd":   1.0,
         "as_of_date":    date.today().strftime("%Y-%m-%d"),
-        "_generated_at": datetime.now(timezone.utc),
+        "generated_at": datetime.now(timezone.utc),
     })
 
     return pd.DataFrame(rows)

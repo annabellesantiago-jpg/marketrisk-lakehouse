@@ -52,6 +52,29 @@ models:
         data_tests:
           - not_null
           - unique
+      - name: book_id
+        description: sub-desk book identifier
+        data_tests:
+          - not_null
+      - name: trader_id
+        description: Unique trader identifier
+        data_tests:
+          - not_null          
+      - name: counterparty
+        description: Counterparty name
+        data_tests:
+          - not_null          
+      - name: asset_class
+        description: Asset class of the instrument
+        data_tests:
+          - not_null              
+          - accepted_values:
+              arguments:
+                 values: ['FX', 'Equity', 'Rates', 'Credit']
+      - name: instrument_type
+        description: Type of the financial instrument
+        data_tests:
+          - not_null          
       - name: desk
         description: Trading desk name
         data_tests:
@@ -66,10 +89,22 @@ models:
           - accepted_values:
               arguments:
                  values: ['LONG', 'SHORT']
+      - name: notional
+        description: Notional value in local currency
+        data_tests:
+          - not_null                 
       - name: notional_usd
         description: Notional value converted to USD
         data_tests:
           - not_null
+      - name: trade_date
+        description: Date when trade was booked
+        data_tests:
+          - not_null          
+      - name: maturity_date
+        description: Date when trade matures
+        data_tests:
+          - not_null          
       - name: fx_rate_vs_usd
         description: FX rate used for USD conversion
         data_tests:

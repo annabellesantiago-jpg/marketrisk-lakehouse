@@ -41,12 +41,22 @@ sources:
             description: Unique trade identifier — primary key
           - name: desk
             description: Trading desk — FX Desk, Equity Desk, Rates Desk, Credit Desk
+          - name: book_id
+            description: Sub-desks or books within each desk. Used for more granular risk monitoring.
+          - name: trader_id
+            description: Unique identifier for the trader
           - name: counterparty
             description: Counterparty name
           - name: asset_class
             description: Asset class — FX, Equity, Rates, Credit
+          - name: instrument_type
+            description: distinguishes between different types of instruments within each asset class, e.g. for FX: spot, forward, swap
           - name: ticker
             description: Instrument ticker symbol
+          - name: isin
+            description: International Securities Identification Number
+          - name: cusip
+            description: Committee on Uniform Securities Identification Procedures identifier (US securities only)
           - name: direction
             description: LONG or SHORT
           - name: notional
