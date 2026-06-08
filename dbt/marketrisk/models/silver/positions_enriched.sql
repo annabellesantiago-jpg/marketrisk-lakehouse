@@ -31,10 +31,6 @@ fx_with_usd AS (
     UPPER({{ cast_to_string('currency') }}) AS currency,
     {{ cast_to_double('rate_vs_usd') }}  AS rate_vs_usd
   FROM {{ source('bronze', 'fx_rates') }}
-  UNION ALL
-  SELECT
-    'USD' AS currency,
-    1.0   AS rate_vs_usd
 ),
 
 -- Step 2: Find the most recent price date available for each ticker.
@@ -70,6 +66,11 @@ positions_with_direction AS (
   SELECT
     {{ cast_to_string('trade_id') }}      AS trade_id,
     {{ cast_to_string('desk') }}          AS desk,
+    {{ cast_to_string('trader_id') }}     AS trader_id,
+    {{ cast_to_string('book_id') }}       AS book_id,
+    {{ cast_to_string('isin') }}          AS isin,
+    {{ cast_to_string('cusip') }}         AS cusip,
+    {{ cast_to_string('instrument_type') }}  AS instrument_type,
     {{ cast_to_string('counterparty') }}  AS counterparty,
     {{ cast_to_string('asset_class') }}   AS asset_class,
     {{ cast_to_string('ticker') }}        AS ticker,
@@ -94,9 +95,14 @@ enriched AS (
   SELECT
     p.trade_id,
     p.desk,
+    p.book_id,
+    p.trader_id,
     p.counterparty,
     p.asset_class,
+    p.instrument_type,    
     p.ticker,
+    p.isin,
+    p.cusip,    
     p.direction,
     p.notional,
     p.currency,
@@ -122,9 +128,14 @@ enriched AS (
 SELECT
   trade_id,
   desk,
+  book_id,
+  trader_id,
   counterparty,
   asset_class,
+  instrument_type, 
   ticker,
+  isin,
+  cusip,    
   direction,
   notional,
   currency,

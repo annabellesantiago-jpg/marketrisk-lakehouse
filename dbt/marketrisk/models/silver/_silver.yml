@@ -75,6 +75,10 @@ models:
         description: Type of the financial instrument
         data_tests:
           - not_null          
+          - accepted_values:
+              arguments:
+                values:
+                  ['FX_FORWARD', 'EQUITY', 'CORPORATE_BOND', 'CDS']          
       - name: desk
         description: Trading desk name
         data_tests:

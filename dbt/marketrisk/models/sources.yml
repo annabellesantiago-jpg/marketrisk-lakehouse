@@ -50,7 +50,7 @@ sources:
           - name: asset_class
             description: Asset class — FX, Equity, Rates, Credit
           - name: instrument_type
-            description: distinguishes between different types of instruments within each asset class, e.g. for FX: spot, forward, swap
+            description: distinguishes between different types of instruments within each asset class
           - name: ticker
             description: Instrument ticker symbol
           - name: isin
