@@ -82,7 +82,7 @@ exceptions_identified AS (
     END                                                  AS is_exception,
     CASE
       WHEN pnl.actual_loss_usd > vr.var_97_5_usd
-      THEN ROUND(pnl.actual_loss_usd - vr.var_97_5_usd, 2)
+      THEN pnl.actual_loss_usd - vr.var_97_5_usd
       ELSE NULL
     END                                                  AS exception_magnitude
   FROM daily_pnl        pnl
@@ -104,7 +104,7 @@ rolling_exceptions AS (
     actual_loss_usd,
     is_exception,
     exception_magnitude,
-    SUM(CAST(is_exception AS INT)) OVER (
+    SUM({{ cast_to_int('is_exception') }}) OVER (
       PARTITION BY desk
       ORDER BY backtest_date ASC
       ROWS BETWEEN 249 PRECEDING AND CURRENT ROW
@@ -140,11 +140,11 @@ basel_assessment AS (
 SELECT
   backtest_date,
   desk,
-  ROUND(var_97_5_usd, 2)              AS var_97_5_usd,
-  ROUND(actual_loss_usd, 2)           AS actual_loss_usd,
+  var_97_5_usd                        AS var_97_5_usd,
+  actual_loss_usd                     AS actual_loss_usd,
   is_exception,
   exception_magnitude,
-  CAST(rolling_250d_exceptions AS INT) AS rolling_250d_exceptions,
+  {{ cast_to_int('rolling_250d_exceptions') }} AS rolling_250d_exceptions,
   basel_zone,
   model_status,
   current_timestamp()                 AS _gold_loaded_at

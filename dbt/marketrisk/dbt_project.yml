@@ -51,7 +51,7 @@ models:
 
 seeds:
   marketrisk:
-    scenario_definitions:
+    stress_scenarios:
       +schema: bronze
       +column_types:
         scenario_name:          varchar(100)

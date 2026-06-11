@@ -29,20 +29,25 @@
 }}
 
 /*
-  gold.equity_sensitivity
+  gold.eq_sensitivity
   ─────────────────────────────────────────────────────────────────────────────
   Purpose : Equity Delta — P&L impact of a 1% move in each equity price
-            by desk and ticker. Includes sector and geography breakdown
-            for concentration analysis.
-  Source  : silver.positions_enriched
+            by desk and ticker. Sector and geography from the
+            ticker_classifications seed.
+  Source  : silver.positions_enriched + seeds.ticker_classifications
   Filter  : asset_class = 'Equity' only
   Grain   : One row per desk per ticker per calculation_date
-  Unique key: [calculation_date, desk, ticker]
-  Regulatory: Internal equity risk management. Feeds sector and geographic
-              concentration reporting.
-  Limitation: First-order linear sensitivity only. Does not capture gamma
-              (convexity) or vega (volatility sensitivity). These require
-              options pricing data not available in this project.
+  Unique key : [calculation_date, desk, ticker]
+ 
+  Rounding convention:
+    - Monetary _usd columns : no rounding — full DOUBLE precision
+    - Percentage/ratio cols  : ROUND(x, 4)
+ 
+  Note on ticker_classifications seed:
+    The seed has NO asset_class column — the same ticker (e.g. JPM) maps
+    to the same sector/geography regardless of which desk holds it or
+    which asset class the position is classified as. Sector and geography
+    are instrument-level properties, not position-level.
   ─────────────────────────────────────────────────────────────────────────────
 */
 
@@ -53,21 +58,11 @@ WITH
 --         In production this would come from a reference data system
 --         (Bloomberg, Refinitiv) that classifies every instrument.
 ticker_classification AS (
-    SELECT ticker, sector, geography
-      FROM ( 
-            VALUES 
-            ("AAPL", "Technology", "US"),
-            ("MSFT", "Technology", "US"),
-            ("GOOGL", "Communication Services", "US"),
-            ("AMZN", "Consumer Discretionary", "US"),
-            ("TSLA", "Consumer Discretionary", "US"),
-            ("BABA", "Consumer Discretionary", "China"),
-            ("JPM", "Financial Services", "US"),
-            ("GS", "Financial Services", "US"),
-            ("HSBA.L", "Financial Services", "UK"),
-            ("SAN.MC", "Financial Services", "Europe")
-            )
-      ) AS t(ticker, sector, geography)
+    SELECT 
+       {{ cast_to_string('ticker') }} AS ticker,
+       {{ cast_to_string('sector') }} AS sector,
+       {{ cast_to_string('geography') }} AS geography
+      FROM {{ ref('ticker_classifications') }}
 
 -- STEP 2: filter equity positions only and cast all columns explicitly to ensure consistent data types for calculations and downstream use.
 --         We are only calculating equity sensitivity for equity positions.

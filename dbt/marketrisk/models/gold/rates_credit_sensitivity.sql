@@ -41,6 +41,11 @@
   Regulatory: FRTB tenor-bucketed sensitivity reporting. PV01 for Rates
               capital, CS01 for Credit capital.
  
+  Rounding convention:
+    - Monetary _usd columns        : no rounding — full DOUBLE precision
+    - weighted_avg_duration_years  : ROUND(x, 4) — already a proxy
+    - Percentage/ratio cols        : ROUND(x, 4) — e.g. 0.1234% = 0.001234
+ 
   CRITICAL — Sign Convention:
   Rates and bond prices move in OPPOSITE directions:
     - Rates RISE  → bond prices FALL → LONG bond position LOSES
@@ -63,9 +68,9 @@
 
 WITH
  
--- Step 1: Count matured positions per desk and asset class BEFORE filtering.
---         This gives us the data quality metric showing how many positions
---         were excluded from the sensitivity calculation.
+-- Step 1: Count matured positions for data quality reporting.
+--         These are excluded from sensitivity calculations but we track
+--         how many were excluded so downstream users can assess coverage.
 matured_counts AS (
   SELECT
     {{ cast_to_string(desk       ) }} AS desk,
@@ -104,7 +109,7 @@ live_positions AS (
     AND trade_id IS NOT NULL
 ),
 
--- Step 3: Assign tenor bucket based on days_to_maturity.
+-- Step 3: Assign FRTB tenor bucket based on days_to_maturity.
 --         FRTB standard tenor buckets group positions by remaining maturity.
 --         The bucket determines which part of the yield curve the position
 --         is most sensitive to. A 2-year bond is sensitive to the 2Y rate,
@@ -232,8 +237,8 @@ SELECT
   s.asset_class,
   s.tenor_bucket,
   s.rate_currency,
-  {{ cast_to_int(s.position_count) }}      AS position_count,
-  COALESCE({{ cast_to_int(m.matured_position_count) }}, 0) AS matured_position_count,
+  {{ cast_to_int('s.position_count') }}      AS position_count,
+  COALESCE({{ cast_to_int('m.matured_position_count') }}, 0) AS matured_position_count,
   s.gross_notional_usd,
   s.net_notional_usd,
   s.weighted_avg_duration_years,

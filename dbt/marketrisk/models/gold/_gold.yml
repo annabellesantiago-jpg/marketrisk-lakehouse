@@ -1,76 +1,17 @@
 version: 2
 
 models:
+
+  # ════════════════════════════════════════════════════════════════════════
+  # PORTED FROM NOTEBOOKS — 4 models
+  # ════════════════════════════════════════════════════════════════════════
+
   - name: var_daily
     description: >
-      Daily VaR, 10-day VaR and Expected Shortfall by desk and asset class.
-      Historical simulation using 260 trading days of price returns.
-      Grain: One row per desk per asset_class per calculation_date
-      Source: silver.positions_enriched + silver.prices_cleaned
-    columns:
-      - name: calculation_date
-        description: Date Value at Risk was calculated
-        data_tests:
-           - not_null
-      - name: desk
-        description: Trading desk name
-        data_tests:
-           - not_null
-      - name: asset_class
-        description: Asset class (FX, Equity, Rates, Credit)
-        data_tests:
-           - not_null
-           - accepted_values:
-                arguments:
-                   values: ['FX', 'Equity', 'Rates', 'Credit']
-      - name: position_count
-        description: Number of positions in this desk/asset_class group
-        data_tests:
-           - not_null
-      - name: total_notional_usd
-        description: Total notional exposure in USD for this group
-        data_tests:
-           - not_null
-      - name: var_95_usd
-        description: 1-day VaR at 95th percentile — 1 in 20 days loss threshold. Internal management use.
-        data_tests:
-           - not_null
-      - name: var_97_5_usd
-        description: 1-day VaR at 97.5th percentile — Basel III / FRTB standard confidence level.
-        data_tests:
-           - not_null
-      - name: var_99_usd
-        description: 1-day VaR at 99th percentile — 1 in 100 days loss threshold. Senior management use.
-        data_tests:
-           - not_null
-      - name: var_10day_95_usd
-        description: 10-day VaR at 95th percentile. Derived as var_95 × √10. Basel III regulatory capital input.
-        data_tests:
-           - not_null
-      - name: var_10day_97_5_usd
-        description: 10-day VaR at 97.5th percentile. Derived as var_97_5 × √10. Primary Basel III capital measure.
-        data_tests:
-           - not_null
-      - name: var_10day_99_usd
-        description: 10-day VaR at 99th percentile. Derived as var_99 × √10.
-        data_tests:
-           - not_null
-      - name: es_97_5_usd
-        description: Expected Shortfall at 97.5th percentile. Average loss on days exceeding var_97_5. FRTB primary regulatory measure.
-        data_tests:
-           - not_null
-      - name: avg_daily_return_usd
-        description: Average daily P&L across all 260 scenarios for this group
-      - name: worst_day_loss_usd
-        description: Largest single-day loss in the 260-day history
-      - name: best_day_gain_usd
-        description: Largest single-day gain in the 260-day history
-      - name: scenario_count
-        description: Number of historical scenarios used. Should be ~260		
-        data_tests:
-           - not_null
-      - name: _gold_loaded_at
-        description: Timestamp when row was loaded into Gold
+      Daily VaR at 95/97.5/99%, 10-day VaR and Expected Shortfall by desk
+      and asset class. Historical simulation using 260 trading days.
+      Grain: One row per desk per asset_class per calculation_date.
+      Regulatory: Basel III (VaR 95/97.5/99%), FRTB (ES 97.5%).
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -78,191 +19,975 @@ models:
               - desk
               - asset_class
               - calculation_date
+    columns:
+      - name: calculation_date
+        description: Date VaR was calculated
+        data_tests:
+          - not_null
+      - name: desk
+        description: Trading desk
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['FX Desk', 'Equity Desk', 'Rates Desk', 'Credit Desk']
+      - name: asset_class
+        description: Asset class — FX, Equity, Rates, Credit
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['FX', 'Equity', 'Rates', 'Credit']
+      - name: position_count
+        description: Number of positions in this desk/asset_class group
+        data_tests:
+          - not_null
+      - name: total_notional_usd
+        description: Total gross notional in USD. Full DOUBLE precision — no rounding.
+        data_tests:
+          - not_null
+      - name: var_95_usd
+        description: 1-day VaR 95th percentile. Internal management use.
+        data_tests:
+          - not_null
+      - name: var_97_5_usd
+        description: 1-day VaR 97.5th percentile. Basel III / FRTB standard.
+        data_tests:
+          - not_null
+      - name: var_99_usd
+        description: 1-day VaR 99th percentile. Senior management and CRO reporting.
+        data_tests:
+          - not_null
+      - name: var_10day_97_5_usd
+        description: 10-day VaR 97.5th. Primary Basel III regulatory capital measure. var_97_5 x sqrt(10).
+        data_tests:
+          - not_null
+      - name: es_97_5_usd
+        description: Expected Shortfall 97.5%. FRTB primary regulatory measure.
+        data_tests:
+          - not_null
+      - name: scenario_count
+        description: Number of historical scenarios used. Should be approximately 260.
+        data_tests:
+          - not_null
+      - name: _gold_loaded_at
+        description: Timestamp when row was loaded into Gold
 
   - name: var_backtest
     description: >
-      Backtest daily VaR predictions against actual P&L and apply
-      Basel traffic light assessment based on 250-day rolling exceptions
-      Grain: One row per desk per backtest_date
-      Source: gold.var_daily + gold.pnl_attribution
-    columns:
-      - name: backtest_date
-        description: Date of the backtest observation
-        data_tests:
-           - not_null
-      - name: desk
-        description: Trading desk name
-        data_tests:
-           - not_null
-      - name: var_97_5_usd
-        description: 1-day VaR at 97.5th percentile used in this backtest observation
-        data_tests:
-           - not_null
-      - name: actual_loss_usd
-        description: Actual loss on this date. Positive = loss day. Negative = gain day.
-        data_tests:
-           - not_null
-      - name: is_exception
-        description: True when actual loss exceeded VaR — a backtesting exception
-        data_tests:
-           - not_null
-           - accepted_values:
-                arguments:
-                   values: [true, false]
-      - name: exception_magnitude
-        description: How much the actual loss exceeded VaR. Null when is_exception = false.
-      - name: rolling_250d_exceptions
-        description: Count of exceptions in the rolling 250 trading day window — Basel standard
-      - name: basel_zone
-        description: >
-                    Basel traffic light zone based on rolling exceptions:
-                    GREEN (0-4 exceptions), AMBER (5-9), RED (10+)
-        data_tests:
-           - not_null
-           - accepted_values:
-                arguments:
-                   values: ['GREEN', 'AMBER', 'RED']
-      - name: model_status
-        description: Model assessment (ACCEPTED, REVIEW, REJECTED) based on basel_zone and internal risk appetite
-        data_tests:
-           - not_null
-           - accepted_values:
-                arguments:
-                   values: ['ACCEPTED', 'REVIEW', 'REJECTED']
-      - name: _gold_loaded_at
-        description: Timestamp when row was loaded into Gold
+      VaR backtesting — compares daily VaR predictions against actual P&L.
+      Counts exceptions and assigns Basel traffic light assessment.
+      Grain: One row per desk per backtest_date.
+      Regulatory: Basel III backtesting. SR 11-7 model validation.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
               - desk
               - backtest_date
+    columns:
+      - name: backtest_date
+        description: Date of the backtest observation
+        data_tests:
+          - not_null
+      - name: desk
+        description: Trading desk
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['FX Desk', 'Equity Desk', 'Rates Desk', 'Credit Desk']
+      - name: var_97_5_usd
+        description: 1-day VaR 97.5th percentile used in this observation
+        data_tests:
+          - not_null
+      - name: actual_loss_usd
+        description: Actual loss on this day. Positive = loss. Negative = gain.
+        data_tests:
+          - not_null
+      - name: is_exception
+        description: TRUE when actual loss exceeded VaR
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
+      - name: rolling_250d_exceptions
+        description: Exception count in rolling 250 trading day window
+        data_tests:
+          - not_null
+      - name: basel_zone
+        description: GREEN (0–4 exceptions) / AMBER (5–9) / RED (10+)
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['GREEN', 'AMBER', 'RED']
+      - name: model_status
+        description: ACCEPTED / REVIEW / REJECTED based on Basel zone
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['ACCEPTED', 'REVIEW', 'REJECTED']
+      - name: _gold_loaded_at
+        description: Timestamp when row was loaded into Gold
 
   - name: pnl_attribution
     description: >
-      Attribute daily P&L to market moves vs unexplained factors by desk and asset class.
-      Grain: One row per desk per pnl_date
-      Source: gold.var_daily + gold.pnl_attribution
-    columns:
-      - name: pnl_date
-        description: Date PnL was calculated
-        data_tests:
-           - not_null
-      - name: desk
-        description: Trading desk name
-        data_tests:
-           - not_null
-      - name: hypothetical_pnl_usd
-        description: PnL explained purely by market price moves — clean P&L
-        data_tests:
-           - not_null
-      - name: actual_pnl_usd
-        description: Total PnL including all factors
-        data_tests:
-           - not_null
-      - name: unexplained_pnl_usd
-        description: Actual minus hypothetical. Large values are a red flag.
-        data_tests:
-           - not_null
-      - name: position_count
-        description: Number of positions contributing to PnL
-        data_tests:
-           - not_null
-      - name: long_pnl_usd
-        description: PnL contribution from LONG positions only
-        data_tests:
-           - not_null
-      - name: short_pnl_usd
-        description: PnL contribution from SHORT positions only
-        data_tests:
-           - not_null
-      - name: _gold_loaded_at
-        description: Timestamp when row was loaded into Gold
+      Daily PnL attribution — actual vs hypothetical P&L by desk.
+      Unexplained PnL flags unmodelled risk or booking errors.
+      Grain: One row per desk per pnl_date.
+      Feeds: var_backtest, risk_summary, risk_adjusted_performance.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
               - desk
               - pnl_date
+    columns:
+      - name: pnl_date
+        description: Date PnL was calculated
+        data_tests:
+          - not_null
+      - name: desk
+        description: Trading desk
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['FX Desk', 'Equity Desk', 'Rates Desk', 'Credit Desk']
+      - name: hypothetical_pnl_usd
+        description: PnL explained purely by market price moves
+        data_tests:
+          - not_null
+      - name: actual_pnl_usd
+        description: Total PnL including all factors
+        data_tests:
+          - not_null
+      - name: unexplained_pnl_usd
+        description: Actual minus hypothetical. Large values are a model quality red flag.
+        data_tests:
+          - not_null
+      - name: position_count
+        description: Number of positions contributing to PnL
+        data_tests:
+          - not_null
+      - name: long_pnl_usd
+        description: PnL contribution from LONG positions only
+        data_tests:
+          - not_null
+      - name: short_pnl_usd
+        description: PnL contribution from SHORT positions only
+        data_tests:
+          - not_null
+      - name: _gold_loaded_at
+        description: Timestamp when row was loaded into Gold
 
   - name: exposure_monitor
     description: >
-      Daily limit utilisation and breach monitoring by desk. Traffic light status (GREEN/AMBER/RED) for reporting layer.
-      Status logic:
-        GREEN  — utilisation_pct < 80  — within safe operating range
-        AMBER  — utilisation_pct >= 80 and < 100  — approaching limit, early warning
-        RED    — utilisation_pct >= 100  — limit breached, immediate action required
-      Grain: One row per desk per as_of_date
-      Source: silver.positions_enriched + bronze.desk_limits
-    columns:
-      - name: as_of_date
-        description: Date exposure was calculated
-        data_tests:
-           - not_null
-      - name: desk
-        description: Trading desk name
-        data_tests:
-           - not_null
-      - name: gross_exposure_usd
-        description: Sum of absolute notional values across all positions regardless of direction
-        data_tests:
-           - not_null
-      - name: net_exposure_usd
-        description: Sum of signed exposures — LONG positive, SHORT negative
-        data_tests:
-           - not_null
-      - name: limit_usd
-        description: Risk limit for this desk in USD from bronze.desk_limits
-        data_tests:
-           - not_null
-      - name: utilisation_pct
-        description: Gross exposure as percentage of limit. 100 = at limit. Above 100 = breach.
-        data_tests:
-           - not_null
-      - name: limit_status
-        description: >
-          Traffic light status based on utilisation percentage.
-          GREEN = below 80%, AMBER = 80<=100%, RED = >= 100%
-        data_tests:
-           - not_null
-           - accepted_values:
-                arguments:
-                   values: ['GREEN', 'AMBER', 'RED']
-      - name: warning_flag
-        description: >
-          Flag indicating if the desk is approaching its risk limit.
-          True when utilisation_pct >= 80 and < 100
-        data_tests:
-           - not_null
-           - accepted_values:
-                arguments:
-                   values: [true, false]
-      - name: breach_flag
-        description: >
-          Flag indicating if the desk has breached its risk limit.
-          True when utilisation_pct >= 100
-        data_tests:
-           - not_null           
-           - accepted_values:
-                arguments:
-                   values: [true, false]
-      - name: long_exposure_usd
-        description: Total exposure from LONG positions only
-        data_tests:
-           - not_null
-      - name: short_exposure_usd
-        description: Total exposure from SHORT positions only
-        data_tests:
-           - not_null
-      - name: position_count
-        description: Total number of positions for this desk
-        data_tests:
-           - not_null
-      - name: _gold_loaded_at
-        description: Timestamp when row was loaded into Gold
+      Daily limit utilisation and breach monitoring by desk.
+      GREEN/AMBER/RED traffic light. Feeds limit_breach_log.
+      Grain: One row per desk per as_of_date.
+      Regulatory: MAS Notice 637 limit reporting.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
               - desk
               - as_of_date
+    columns:
+      - name: as_of_date
+        description: Date exposure was calculated
+        data_tests:
+          - not_null
+      - name: desk
+        description: Trading desk
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['FX Desk', 'Equity Desk', 'Rates Desk', 'Credit Desk']
+      - name: gross_exposure_usd
+        description: SUM(ABS(notional_usd)). Both directions consume limit capacity.
+        data_tests:
+          - not_null
+      - name: net_exposure_usd
+        description: Signed sum of exposures
+        data_tests:
+          - not_null
+      - name: limit_usd
+        description: Risk limit for this desk in USD
+        data_tests:
+          - not_null
+      - name: utilisation_pct
+        description: Gross exposure as percentage of limit. 100 = at limit. ROUND(x, 4).
+        data_tests:
+          - not_null
+      - name: limit_status
+        description: GREEN below 80% / AMBER 80–100% / RED above 100%
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['GREEN', 'AMBER', 'RED']
+      - name: warning_flag
+        description: TRUE when utilisation >= 80% and < 100%
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
+      - name: breach_flag
+        description: TRUE when utilisation >= 100%
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
+      - name: long_exposure_usd
+        description: Total exposure from LONG positions only
+        data_tests:
+          - not_null
+      - name: short_exposure_usd
+        description: Total exposure from SHORT positions only
+        data_tests:
+          - not_null
+      - name: position_count
+        description: Total number of positions for this desk
+        data_tests:
+          - not_null
+      - name: _gold_loaded_at
+        description: Timestamp when row was loaded into Gold
+
+  # ════════════════════════════════════════════════════════════════════════
+  # SENSITIVITY MODELS — 3 models
+  # ════════════════════════════════════════════════════════════════════════
+
+  - name: fx_sensitivity
+    description: >
+      FX Delta and Net Open Position by desk, currency and asset class.
+      P&L impact of a 1% move in each FX rate. Basel III NOP metric.
+      Grain: One row per desk per currency per asset_class per calculation_date.
+      Source: silver.positions_enriched (non-USD positions only).
+      Regulatory: Basel III FX capital charge. NOP reporting.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - calculation_date
+              - desk
+              - currency
+              - asset_class
+    columns:
+      - name: calculation_date
+        description: Date sensitivity was calculated
+        data_tests:
+          - not_null
+      - name: desk
+        description: Trading desk
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['FX Desk', 'Equity Desk', 'Rates Desk', 'Credit Desk']
+      - name: currency
+        description: Non-USD currency the sensitivity is measured for
+        data_tests:
+          - not_null
+      - name: asset_class
+        description: Asset class of the contributing positions
+        data_tests:
+          - not_null
+      - name: position_count
+        description: Distinct trade count in this group
+        data_tests:
+          - not_null
+      - name: long_position_count
+        description: LONG position count
+        data_tests:
+          - not_null
+      - name: short_position_count
+        description: SHORT position count
+        data_tests:
+          - not_null
+      - name: gross_notional_usd
+        description: SUM(ABS(notional_usd)). Full DOUBLE precision — no rounding.
+        data_tests:
+          - not_null
+      - name: long_notional_usd
+        description: Sum of LONG notionals in USD
+        data_tests:
+          - not_null
+      - name: short_notional_usd
+        description: Sum of SHORT notionals in USD (negative or zero)
+        data_tests:
+          - not_null
+      - name: net_notional_usd
+        description: Signed sum. Positive = net long. Negative = net short.
+        data_tests:
+          - not_null
+      - name: net_open_position_usd
+        description: MAX(long_notional, ABS(short_notional)). Basel regulatory NOP metric.
+        data_tests:
+          - not_null
+      - name: fx_rate_vs_usd
+        description: FX rate used in the calculation
+        data_tests:
+          - not_null
+      - name: fx_delta_1pct_usd
+        description: Absolute P&L impact of a 1% FX move. Always positive.
+        data_tests:
+          - not_null
+      - name: fx_delta_up_1pct_usd
+        description: Signed P&L if foreign currency STRENGTHENS 1% vs USD
+        data_tests:
+          - not_null
+      - name: fx_delta_down_1pct_usd
+        description: Signed P&L if foreign currency WEAKENS 1% vs USD
+        data_tests:
+          - not_null
+      - name: _gold_loaded_at
+        description: Timestamp when row was loaded into Gold
+
+  - name: equity_sensitivity
+    description: >
+      Equity Delta by desk and ticker. Sector and geography from
+      the ticker_classifications seed — one row per instrument.
+      Grain: One row per desk per ticker per calculation_date.
+      Source: silver.positions_enriched (Equity only) + seeds.ticker_classifications.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - calculation_date
+              - desk
+              - ticker
+    columns:
+      - name: calculation_date
+        description: Date sensitivity was calculated
+        data_tests:
+          - not_null
+      - name: desk
+        description: Trading desk
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['FX Desk', 'Equity Desk', 'Rates Desk', 'Credit Desk']
+      - name: ticker
+        description: Equity ticker symbol (normalized format)
+        data_tests:
+          - not_null
+      - name: sector
+        description: >
+          Sector from ticker_classifications seed.
+          COALESCE to 'Unknown' if ticker not in seed.
+        data_tests:
+          - not_null
+      - name: geography
+        description: >
+          Geographic region from ticker_classifications seed.
+          COALESCE to 'Unknown' if ticker not in seed.
+        data_tests:
+          - not_null
+      - name: position_count
+        description: Distinct trade count
+        data_tests:
+          - not_null
+      - name: long_position_count
+        description: LONG position count
+        data_tests:
+          - not_null
+      - name: short_position_count
+        description: SHORT position count
+        data_tests:
+          - not_null
+      - name: gross_notional_usd
+        description: SUM(ABS(notional_usd)). Full DOUBLE precision — no rounding.
+        data_tests:
+          - not_null
+      - name: net_notional_usd
+        description: Signed sum of notionals
+        data_tests:
+          - not_null
+      - name: current_price
+        description: Latest available closing price. NULL if no price data exists.
+      - name: latest_price_date
+        description: Date of the current_price — shows data staleness.
+      - name: equity_delta_1pct_usd
+        description: Absolute P&L impact of a 1% price move. Always positive.
+        data_tests:
+          - not_null
+      - name: equity_delta_up_1pct_usd
+        description: Signed P&L if price RISES 1%. Positive for net long.
+        data_tests:
+          - not_null
+      - name: equity_delta_down_1pct_usd
+        description: Signed P&L if price FALLS 1%. Negative for net long.
+        data_tests:
+          - not_null
+      - name: long_delta_usd
+        description: Sensitivity from LONG book only. Always positive.
+        data_tests:
+          - not_null
+      - name: short_delta_usd
+        description: Sensitivity from SHORT book only. Always positive (ABS applied).
+        data_tests:
+          - not_null
+      - name: _gold_loaded_at
+        description: Timestamp when row was loaded into Gold
+
+  - name: rates_credit_sensitivity
+    description: >
+      PV01 and CS01 sensitivity by desk, asset class, tenor bucket and currency.
+      Includes signed directional sensitivity. Duration approximated from
+      days_to_maturity / 365 — known limitation, not for regulatory submission.
+      Grain: One row per desk per asset_class per tenor_bucket per rate_currency
+      per calculation_date.
+      Source: silver.positions_enriched (Rates and Credit, live positions only).
+      Regulatory: FRTB tenor-bucketed sensitivity reporting.
+      Sign convention: pv01_up_1bp is NEGATIVE for long bonds (rates up = prices down).
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - calculation_date
+              - desk
+              - asset_class
+              - tenor_bucket
+              - rate_currency
+    columns:
+      - name: calculation_date
+        description: Date sensitivity was calculated
+        data_tests:
+          - not_null
+      - name: desk
+        description: Trading desk
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['FX Desk', 'Equity Desk', 'Rates Desk', 'Credit Desk']
+      - name: asset_class
+        description: Rates or Credit only — FX and Equity excluded from this model
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['Rates', 'Credit']
+      - name: tenor_bucket
+        description: FRTB standard maturity bucket
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['0-1Y', '1-5Y', '5-10Y', '10Y+']
+      - name: rate_currency
+        description: Currency of the rate risk
+        data_tests:
+          - not_null
+      - name: position_count
+        description: Live positions included in this calculation
+        data_tests:
+          - not_null
+      - name: matured_position_count
+        description: Positions excluded because days_to_maturity <= 0. Data quality metric.
+        data_tests:
+          - not_null
+      - name: gross_notional_usd
+        description: SUM(ABS(notional_usd)). Full DOUBLE precision.
+        data_tests:
+          - not_null
+      - name: net_notional_usd
+        description: Signed sum of notionals
+        data_tests:
+          - not_null
+      - name: weighted_avg_duration_years
+        description: Notional-weighted average duration proxy. ROUND(x, 4).
+        data_tests:
+          - not_null
+      - name: pv01_usd
+        description: Absolute 1bp rate sensitivity. Rates positions only. 0.0 for Credit.
+        data_tests:
+          - not_null
+      - name: pv01_up_1bp_usd
+        description: >
+          Signed P&L if rates RISE 1bp. Negative for long bonds — rates up means
+          prices down means LOSS. pv01_up = signed_sensitivity × (-1).
+        data_tests:
+          - not_null
+      - name: pv01_down_1bp_usd
+        description: >
+          Signed P&L if rates FALL 1bp. Positive for long bonds. pv01_down =
+          signed_sensitivity × (+1).
+        data_tests:
+          - not_null
+      - name: dv01_100bps_usd
+        description: PV01 for 100bp rate shock. Management reporting threshold.
+        data_tests:
+          - not_null
+      - name: cs01_usd
+        description: Absolute 1bp spread sensitivity. Credit positions only. 0.0 for Rates.
+        data_tests:
+          - not_null
+      - name: cs01_widen_1bp_usd
+        description: Signed P&L if spreads WIDEN 1bp. Negative for long credit.
+        data_tests:
+          - not_null
+      - name: cs01_tighten_1bp_usd
+        description: Signed P&L if spreads TIGHTEN 1bp. Positive for long credit.
+        data_tests:
+          - not_null
+      - name: cs01_100bps_usd
+        description: CS01 for 100bp spread shock.
+        data_tests:
+          - not_null
+      - name: _gold_loaded_at
+        description: Timestamp when row was loaded into Gold
+
+  # ════════════════════════════════════════════════════════════════════════
+  # STRESS AND CONCENTRATION — 2 models
+  # ════════════════════════════════════════════════════════════════════════
+
+  - name: stress_testing
+    description: >
+      Named scenario stress test P&L impacts by desk. Scenarios loaded from
+      the scenario_definitions dbt seed. Sign convention for Rates/Credit:
+      stressed_pnl = notional × duration × shock_bps × 0.0001 × direction × (-1).
+      The (-1) captures the inverse price-rate relationship.
+      Grain: One row per desk per scenario_name per calculation_date.
+      Source: silver.positions_enriched + seeds.scenario_definitions
+      + gold.var_daily + bronze.desk_limits.
+      Regulatory: ICAAP. Basel III sVaR proxy. MAS prescribed scenarios.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - calculation_date
+              - desk
+              - scenario_name
+    columns:
+      - name: calculation_date
+        description: Date stress test was run
+        data_tests:
+          - not_null
+      - name: desk
+        description: Trading desk
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['FX Desk', 'Equity Desk', 'Rates Desk', 'Credit Desk']
+      - name: scenario_name
+        description: Name of the stress scenario from scenario_definitions seed
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - '2008 GFC'
+                  - '2020 COVID'
+                  - '1997 Asian Crisis'
+                  - 'Rates Shock +200bps'
+                  - 'Equity Crash -30%'
+                  - 'USD Strengthens +10%'
+      - name: scenario_type
+        description: REGULATORY (Basel/MAS required) or MANAGEMENT (internal)
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['REGULATORY', 'MANAGEMENT']
+      - name: is_stressed_var_proxy
+        description: TRUE for 2008 GFC — the closest proxy to Basel sVaR
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
+      - name: position_count
+        description: Positions included in the stressed P&L calculation
+        data_tests:
+          - not_null
+      - name: total_notional_usd
+        description: SUM(ABS(notional_usd)) of included positions. Full DOUBLE precision.
+        data_tests:
+          - not_null
+      - name: portfolio_total_notional_usd
+        description: Total portfolio notional — denominator for coverage_pct
+        data_tests:
+          - not_null
+      - name: coverage_pct
+        description: total_notional / portfolio_total × 100. ROUND(x, 4).
+        data_tests:
+          - not_null
+      - name: stressed_pnl_usd
+        description: Total stressed P&L. Negative = loss. Full DOUBLE precision.
+        data_tests:
+          - not_null
+      - name: stressed_pnl_equity_usd
+        description: Equity component of stressed P&L
+        data_tests:
+          - not_null
+      - name: stressed_pnl_fx_usd
+        description: FX component of stressed P&L
+        data_tests:
+          - not_null
+      - name: stressed_pnl_rates_usd
+        description: Rates component. Includes (-1) sign correction.
+        data_tests:
+          - not_null
+      - name: stressed_pnl_credit_usd
+        description: Credit component. Includes (-1) sign correction.
+        data_tests:
+          - not_null
+      - name: worst_asset_class
+        description: Asset class with the most negative P&L in this scenario
+      - name: worst_asset_class_pnl_usd
+        description: P&L of the worst-performing asset class
+      - name: var_99_usd
+        description: Current VaR 99% for context and stressed_loss_to_var_ratio
+      - name: stressed_loss_to_var_ratio
+        description: ABS(stressed_pnl) / var_99. ROUND(x, 4). Flag if > 10.
+      - name: desk_limit_usd
+        description: Desk risk limit from bronze.desk_limits
+      - name: stressed_loss_to_limit_pct
+        description: ABS(stressed_pnl) / limit × 100. ROUND(x, 4).
+      - name: _gold_loaded_at
+        description: Timestamp when row was loaded into Gold
+
+  - name: concentration_risk
+    description: >
+      Multi-dimensional concentration risk across six types: COUNTERPARTY,
+      INSTRUMENT, SECTOR, GEOGRAPHY, ASSET_CLASS, MATURITY_BUCKET.
+      Sector and geography from ticker_classifications seed (no asset_class column).
+      Thresholds: Portfolio HIGH > 10% / MEDIUM > 5% / LOW <= 5%.
+      Desk HIGH > 20% / MEDIUM > 10% / LOW <= 10%.
+      HHI: < 1500 low, 1500–2500 moderate, > 2500 high.
+      Grain: One row per desk per concentration_type per entity_name per as_of_date.
+      Source: silver.positions_enriched + seeds.ticker_classifications.
+      Regulatory: Basel Large Exposures (25% proxy). MAS Notice 637.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - as_of_date
+              - desk
+              - concentration_type
+              - entity_name
+    columns:
+      - name: as_of_date
+        description: Date concentration was calculated
+        data_tests:
+          - not_null
+      - name: desk
+        description: Trading desk
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['FX Desk', 'Equity Desk', 'Rates Desk', 'Credit Desk']
+      - name: concentration_type
+        description: Type of concentration being measured
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - 'COUNTERPARTY'
+                  - 'INSTRUMENT'
+                  - 'SECTOR'
+                  - 'GEOGRAPHY'
+                  - 'ASSET_CLASS'
+                  - 'MATURITY_BUCKET'
+      - name: entity_name
+        description: The specific entity — varies by concentration_type
+        data_tests:
+          - not_null
+      - name: position_count
+        description: Distinct position count for this desk and entity
+        data_tests:
+          - not_null
+      - name: gross_exposure_usd
+        description: SUM(ABS(notional_usd)). Full DOUBLE precision.
+        data_tests:
+          - not_null
+      - name: net_exposure_usd
+        description: Signed sum of exposures
+        data_tests:
+          - not_null
+      - name: net_abs_exposure_usd
+        description: ABS(net_exposure_usd)
+        data_tests:
+          - not_null
+      - name: pct_of_desk_total
+        description: This entity as percentage of desk total. ROUND(x, 4).
+        data_tests:
+          - not_null
+      - name: pct_of_portfolio_total
+        description: This entity as percentage of full portfolio. ROUND(x, 4).
+        data_tests:
+          - not_null
+      - name: concentration_level
+        description: Portfolio-basis threshold — HIGH > 10% / MEDIUM > 5% / LOW <= 5%
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['HIGH', 'MEDIUM', 'LOW']
+      - name: desk_concentration_level
+        description: Desk-basis threshold — HIGH > 20% / MEDIUM > 10% / LOW <= 10%
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['HIGH', 'MEDIUM', 'LOW']
+      - name: desk_rank
+        description: Rank within this desk by gross exposure descending. 1 = largest.
+        data_tests:
+          - not_null
+      - name: portfolio_rank
+        description: Rank across full portfolio. 1 = largest overall.
+        data_tests:
+          - not_null
+      - name: desk_hhi
+        description: >
+          Herfindahl-Hirschman Index per desk per type.
+          SUM of squared percentage shares. ROUND(x, 2).
+        data_tests:
+          - not_null
+      - name: large_exposure_flag
+        description: TRUE if pct_of_portfolio_total > 25%. Basel large exposure proxy.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
+      - name: _gold_loaded_at
+        description: Timestamp when row was loaded into Gold
+
+  # ════════════════════════════════════════════════════════════════════════
+  # EXECUTIVE AND PERFORMANCE — 3 models
+  # ════════════════════════════════════════════════════════════════════════
+
+  - name: risk_summary
+    description: >
+      Executive risk summary — one row per desk per day combining key metrics
+      from all upstream Gold models. Primary source for the CRO dashboard.
+      Overall risk status: RED if limit breached OR backtesting RED OR stressed > 2x limit.
+      AMBER if utilisation >= 80% OR backtesting AMBER OR stressed > limit. GREEN otherwise.
+      Grain: One row per desk per summary_date.
+      Source: gold.var_daily + gold.exposure_monitor + gold.pnl_attribution
+      + gold.var_backtest + gold.stress_testing + gold.concentration_risk.
+      Note: columns sourced via LEFT JOIN may be NULL if upstream model has no row
+      for today (e.g. first pipeline run, no breaches yet).
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - summary_date
+              - desk
+    columns:
+      - name: summary_date
+        description: Date of the summary
+        data_tests:
+          - not_null
+      - name: desk
+        description: Trading desk
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['FX Desk', 'Equity Desk', 'Rates Desk', 'Credit Desk']
+      - name: total_notional_usd
+        description: Total gross notional from var_daily
+        data_tests:
+          - not_null
+      - name: var_99_usd
+        description: 1-day VaR 99th summed across all asset classes
+        data_tests:
+          - not_null
+      - name: var_10day_97_5_usd
+        description: 10-day VaR 97.5% — primary Basel III regulatory capital measure
+        data_tests:
+          - not_null
+      - name: es_97_5_usd
+        description: Expected Shortfall 97.5% — FRTB measure
+        data_tests:
+          - not_null
+      - name: var_as_pct_of_notional
+        description: var_99 / total_notional × 100. ROUND(x, 4).
+        data_tests:
+          - not_null
+      - name: actual_pnl_usd
+        description: Today actual P&L from pnl_attribution. NULL if no PnL row.
+      - name: gross_exposure_usd
+        description: Total gross exposure from exposure_monitor. NULL if no exposure row.
+      - name: utilisation_pct
+        description: Limit utilisation percentage. NULL if no exposure row.
+      - name: limit_status
+        description: GREEN / AMBER / RED from exposure_monitor. NULL if no exposure row.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['GREEN', 'AMBER', 'RED']
+      - name: rolling_250d_exceptions
+        description: VaR exception count from var_backtest. NULL if no backtest row.
+      - name: basel_zone
+        description: GREEN / AMBER / RED from var_backtest. NULL if no backtest row.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['GREEN', 'AMBER', 'RED']
+      - name: worst_stress_scenario
+        description: Name of worst stress scenario. NULL if no stress_testing row.
+      - name: worst_stress_pnl_usd
+        description: Worst stressed P&L. NULL if no stress_testing row.
+      - name: largest_counterparty
+        description: Largest counterparty by gross exposure. NULL if no concentration row.
+      - name: largest_counterparty_pct
+        description: ROUND(x, 4). NULL if no concentration row.
+      - name: overall_risk_status
+        description: >
+          Single top-level status for CRO dashboard.
+          RED if any critical condition. AMBER if any warning. GREEN if all clear.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['GREEN', 'AMBER', 'RED']
+      - name: _gold_loaded_at
+        description: Timestamp when row was loaded into Gold
+
+  - name: limit_breach_log
+    description: >
+      Permanent historical audit trail of all limit breach episodes.
+      Uses is_incremental() for three-way merge: new breaches INSERT,
+      continuing breaches UPDATE duration and peak, resolved breaches
+      UPDATE breach_end_date and set is_active = FALSE.
+      Grain: One row per desk per breach episode (breach_start_date).
+      Source: gold.exposure_monitor.
+      Regulatory: MAS Notice 637 breach reporting. Regulatory audit trail.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - desk
+              - breach_start_date
+    columns:
+      - name: desk
+        description: Trading desk that breached its limit
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['FX Desk', 'Equity Desk', 'Rates Desk', 'Credit Desk']
+      - name: breach_start_date
+        description: First date the breach was detected
+        data_tests:
+          - not_null
+      - name: breach_end_date
+        description: Date breach was resolved. NULL if still active.
+      - name: breach_duration_days
+        description: Calendar days from start to end (or today if active)
+        data_tests:
+          - not_null
+      - name: is_active
+        description: TRUE if breach is currently ongoing
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
+      - name: peak_utilisation_pct
+        description: Highest utilisation seen during this breach episode. ROUND(x, 4).
+        data_tests:
+          - not_null
+      - name: peak_utilisation_date
+        description: Date the peak utilisation occurred
+        data_tests:
+          - not_null
+      - name: breach_start_utilisation_pct
+        description: Utilisation on the first day of breach. ROUND(x, 4).
+        data_tests:
+          - not_null
+      - name: limit_usd
+        description: Desk risk limit at time of breach
+        data_tests:
+          - not_null
+      - name: gross_exposure_at_start_usd
+        description: Gross exposure on the day breach started
+        data_tests:
+          - not_null
+      - name: warning_start_date
+        description: Date AMBER warning began before this breach. NULL if no warning period.
+      - name: warning_duration_days
+        description: Days in AMBER before breach. NULL if no warning period.
+      - name: _gold_loaded_at
+        description: Timestamp when row was loaded into Gold
+
+  - name: risk_adjusted_performance
+    description: >
+      Risk-adjusted performance metrics — evaluates whether P&L justifies the
+      risk taken and limit consumed by each desk.
+      Performance flag: STRONG if actual_pnl > var_99 (earned more than daily
+      risk capacity). ADEQUATE if 0 < actual_pnl <= var_99. LOSS if <= 0.
+      Grain: One row per desk per calculation_date.
+      Source: gold.pnl_attribution + gold.var_daily + gold.exposure_monitor.
+      Regulatory: Board remuneration committee. Capital allocation governance.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - calculation_date
+              - desk
+    columns:
+      - name: calculation_date
+        description: Date of the performance calculation
+        data_tests:
+          - not_null
+      - name: desk
+        description: Trading desk
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['FX Desk', 'Equity Desk', 'Rates Desk', 'Credit Desk']
+      - name: actual_pnl_usd
+        description: Today actual P&L from pnl_attribution. Full DOUBLE precision.
+        data_tests:
+          - not_null
+      - name: var_99_usd
+        description: 1-day VaR 99% summed across asset classes — economic capital proxy
+        data_tests:
+          - not_null
+      - name: pnl_to_var_ratio
+        description: >
+          actual_pnl / var_99. ROUND(x, 4).
+          > 1.0 = STRONG. 0 to 1 = ADEQUATE. < 0 = LOSS.
+          NULL if var_99 is zero or NULL.
+      - name: limit_utilisation_pct
+        description: Exposure utilisation from exposure_monitor. ROUND(x, 4).
+        data_tests:
+          - not_null
+      - name: pnl_per_unit_utilisation
+        description: >
+          actual_pnl / utilisation_pct. Higher = more efficient limit use.
+          NULL if utilisation_pct is zero.
+      - name: unexplained_pnl_pct
+        description: >
+          unexplained_pnl / ABS(actual_pnl) × 100. ROUND(x, 4).
+          High percentage signals unmodelled risk or booking error.
+          0.0 if actual_pnl is zero.
+        data_tests:
+          - not_null
+      - name: performance_flag
+        description: STRONG / ADEQUATE / LOSS based on PnL vs VaR comparison
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['STRONG', 'ADEQUATE', 'LOSS']
+      - name: _gold_loaded_at
+        description: Timestamp when row was loaded into Gold
