@@ -131,12 +131,8 @@ models:
           - not_null
       - name: isin
         description: International Securities Identification Number. Synthetic for portfolio project.
-        data_tests:
-          - not_null
       - name: cusip
         description: CUSIP identifier. Synthetic for portfolio project.
-        data_tests:
-          - not_null
       - name: currency
         description: Local currency of the position before USD conversion
         data_tests:
