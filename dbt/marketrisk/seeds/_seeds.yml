@@ -1,0 +1,83 @@
+version: 2
+
+seeds:
+
+  - name: stress_scenarios
+    description: >
+      Named stress scenario shock parameters. Maintained by the risk committee.
+      One row per scenario per asset class — 6 scenarios × 4 asset classes = 24 rows.
+      Loaded to bronze.stress_scenarios via dbt seed.
+      Consumed by gold.stress_testing.
+    columns:
+      - name: scenario_name
+        description: Name of the stress scenario
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - '2008 GFC'
+                  - '2020 COVID'
+                  - '1997 Asian Crisis'
+                  - 'Rates Shock +200bps'
+                  - 'Equity Crash -30%'
+                  - 'USD Strengthens +10%'
+      - name: asset_class
+        description: Asset class the shock applies to
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['Equity', 'FX', 'Rates', 'Credit']
+      - name: shock_pct
+        description: Percentage shock for Equity and FX scenarios. NULL for Rates and Credit.
+      - name: shock_bps
+        description: Basis point shock for Rates and Credit scenarios. NULL for Equity and FX.
+      - name: scenario_type
+        description: REGULATORY (Basel/MAS required) or MANAGEMENT (internal)
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['REGULATORY', 'MANAGEMENT']
+      - name: is_stressed_var_proxy
+        description: TRUE for 2008 GFC — used as the Basel stressed VaR proxy
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - scenario_name
+              - asset_class
+
+  - name: ticker_classifications
+    description: >
+      Instrument sector and geography classification. One row per ticker — 11 rows total.
+      No asset_class column — the same ticker maps to the same sector/geography
+      regardless of whether it is held as equity, bond, or CDS.
+      Loaded to bronze.ticker_classifications via dbt seed.
+      Consumed by gold.equity_sensitivity and gold.concentration_risk.
+    columns:
+      - name: ticker
+        description: Normalized ticker symbol — matches silver.positions_enriched.ticker
+        data_tests:
+          - not_null
+          - unique
+      - name: sector
+        description: Industry sector of the instrument
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['Technology', 'Financial Services', 'FX']
+      - name: geography
+        description: Geographic region of the instrument
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['US', 'UK', 'Europe', 'Asia', 'Australia']
