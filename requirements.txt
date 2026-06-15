@@ -5,4 +5,4 @@ python-dotenv==1.0.1
 dbt-core==1.11.8
 dbt-databricks==1.11.7
 fastmcp==0.4.1
-databricks-sql-connector==3.5.0
+databricks-sql-connector==4.1.5
