@@ -63,6 +63,6 @@ seeds:
     ticker_classifications:
       +schema: bronze
       +column_types:
-        ticker:     varchar(50)
-        asset_class: varchar(100)
+        ticker:    varchar(50)
+        sector:    varchar(100)
         geography: varchar(50)

@@ -94,10 +94,7 @@ position_scenarios AS (
     p.notional_usd,
     p.direction_multiplier,
     r.price_date                                         AS scenario_date,
-    ROUND(
-      p.notional_usd * r.daily_return_pct * p.direction_multiplier,
-      2
-    )                                                    AS scenario_pnl_usd
+    p.notional_usd * r.daily_return_pct * p.direction_multiplier AS scenario_pnl_usd
   FROM {{ ref('positions_enriched') }} p
   INNER JOIN return_pct                          r
     ON p.ticker = r.ticker
@@ -195,11 +192,11 @@ combined AS (
     vb.var_95_usd,
     vb.var_97_5_usd,
     vb.var_99_usd,
-    ROUND(vb.var_95_usd   * SQRT(10), 2)                AS var_10day_95_usd,
-    ROUND(vb.var_97_5_usd * SQRT(10), 2)                AS var_10day_97_5_usd,
-    ROUND(vb.var_99_usd   * SQRT(10), 2)                AS var_10day_99_usd,
+    vb.var_95_usd   * SQRT(10)                          AS var_10day_95_usd,
+    vb.var_97_5_usd * SQRT(10)                          AS var_10day_97_5_usd,
+    vb.var_99_usd   * SQRT(10)                          AS var_10day_99_usd,
     -- Fall back to var_97_5 if no tail scenarios exist for ES calculation
-    COALESCE(ROUND(es.es_97_5_usd, 2), vb.var_97_5_usd) AS es_97_5_usd,
+    COALESCE(es.es_97_5_usd, vb.var_97_5_usd)           AS es_97_5_usd,
     vb.avg_daily_return_usd,
     vb.worst_day_loss_usd,
     vb.best_day_gain_usd,
@@ -214,18 +211,18 @@ SELECT
   CURRENT_DATE()                       AS calculation_date,
   desk,
   asset_class,
-  CAST(position_count  AS INT)         AS position_count,
-  ROUND(total_notional_usd, 2)         AS total_notional_usd,
-  ROUND(var_95_usd, 2)                 AS var_95_usd,
-  ROUND(var_97_5_usd, 2)               AS var_97_5_usd,
-  ROUND(var_99_usd, 2)                 AS var_99_usd,
-  var_10day_95_usd,
-  var_10day_97_5_usd,
-  var_10day_99_usd,
-  es_97_5_usd,
-  ROUND(avg_daily_return_usd, 2)       AS avg_daily_return_usd,
-  ROUND(worst_day_loss_usd, 2)         AS worst_day_loss_usd,
-  ROUND(best_day_gain_usd, 2)          AS best_day_gain_usd,
-  CAST(scenario_count AS INT)          AS scenario_count,
+  {{ cast_to_int('position_count') }}  AS position_count,
+  total_notional_usd                   AS total_notional_usd,
+  var_95_usd                           AS var_95_usd,
+  var_97_5_usd                         AS var_97_5_usd,
+  var_99_usd                           AS var_99_usd,
+  var_10day_95_usd,                 
+  var_10day_97_5_usd,                 
+  var_10day_99_usd,                 
+  es_97_5_usd,                 
+  avg_daily_return_usd                 AS avg_daily_return_usd,
+  worst_day_loss_usd                   AS worst_day_loss_usd,
+  best_day_gain_usd                    AS best_day_gain_usd,
+  {{ cast_to_int('scenario_count') }}  AS scenario_count,
   current_timestamp()                  AS _gold_loaded_at
 FROM combined 

@@ -70,6 +70,20 @@ models:
         description: Number of historical scenarios used. Should be approximately 260.
         data_tests:
           - not_null
+      - name: var_10day_95_usd
+        description: 10-day VaR 95th percentile. Secondary Basel III regulatory capital measure.
+        data_tests:
+          - not_null  
+      - name: var_10day_99_usd
+        description: 10-day VaR 99th percentile. Secondary management metric.
+        data_tests:
+          - not_null
+      - name: avg_daily_return_usd
+        description:  average daily return in USD across the 260 scenarios. Shows if returns are generally positive or negative.
+      - name: worst_day_loss_usd
+        description: largest single-day loss in the 260 scenarios. Shows potential for extreme tail events.
+      - name: best_day_gain_usd
+        description: largest single-day gain in the 260 scenarios. Shows potential for upside volatility.
       - name: _gold_loaded_at
         description: Timestamp when row was loaded into Gold
 
@@ -112,6 +126,8 @@ models:
           - accepted_values:
               arguments:
                 values: [true, false]
+      - name: exception_magnitude
+        description: How much actual loss exceeded VaR. NULL when not an exception.
       - name: rolling_250d_exceptions
         description: Exception count in rolling 250 trading day window
         data_tests:
@@ -848,6 +864,12 @@ models:
         description: Largest counterparty by gross exposure. NULL if no concentration row.
       - name: largest_counterparty_pct
         description: ROUND(x, 4). NULL if no concentration row.
+      - name: hypothetical_pnl_usd
+        description: Today's P&L under a hypothetical scenario. NULL if no scenario row.
+      - name: unexplained_pnl_usd
+        description: P&L that cannot be explained by known risk factors. Actual minus hypothetical. NULL if no pnl_attribution row.
+      - name: limit_usd
+        description: Desk limit in USD. NULL if no exposure row.
       - name: overall_risk_status
         description: >
           Single top-level status for CRO dashboard.

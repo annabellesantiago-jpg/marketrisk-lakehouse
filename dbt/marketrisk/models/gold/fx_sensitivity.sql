@@ -113,11 +113,11 @@ sensitivity_calculations AS (
       ABS(net_notional_usd) * 0.01 AS fx_delta_1pct_usd,
       -- Directional delta up: P&L if foreign currency STRENGTHENS 1% vs USD
       -- Positive for net long position (you hold EUR, EUR gets stronger = gain)
-      net_notional_usd * 0.01 AS fx_delta_up_1pc_usd,
+      net_notional_usd * 0.01 AS fx_delta_up_1pct_usd,
       -- Directional delta down: P&L if foreign currency WEAKENS 1% vs USD
       -- Negative for net long position (you hold EUR, EUR gets weaker = loss)      
-      net_notional_usd * -0.01 AS fx_delta_down_1pc_usd,
-      GREATEST(long_notional_usd, ABS(short_notional_usd)) AS nop_usd
+      net_notional_usd * -0.01 AS fx_delta_down_1pct_usd,
+      GREATEST(long_notional_usd, ABS(short_notional_usd)) AS net_open_position_usd
   FROM desks_currency_asset_class_sensitivity
 )
 
@@ -133,10 +133,10 @@ sensitivity_calculations AS (
         long_notional_usd,
         short_notional_usd,
         net_notional_usd,
-        nop_usd,
+        net_open_position_usd,
         fx_rate_vs_usd,
         fx_delta_1pct_usd,
-        fx_delta_up_1pc_usd,
-        fx_delta_down_1pc_usd,
+        fx_delta_up_1pct_usd,
+        fx_delta_down_1pct_usd,
         CURRENT_TIMESTAMP()                       AS _gold_loaded_at
    FROM sensitivity_calculations

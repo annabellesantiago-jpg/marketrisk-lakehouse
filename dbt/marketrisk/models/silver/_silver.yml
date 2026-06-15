@@ -33,6 +33,14 @@ models:
         description: Intraday low price in local currency
         data_tests:
           - not_null
+      - name: volume
+        description: Daily trading volume. NULL for FX pairs — no volume data from Yahoo Finance.
+      - name: fetched_at
+        description: Timestamp when the price was fetched from Yahoo Finance (from bronze)
+        data_tests:
+          - not_null
+      - name: _silver_loaded_at
+        description: Timestamp when the row was loaded into Silver
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -117,6 +125,34 @@ models:
         description: Signed exposure in USD — positive for LONG, negative for SHORT
         data_tests:
           - not_null
+      - name: ticker
+        description: Normalized ticker symbol — matches bronze.positions.ticker for joins
+        data_tests:
+          - not_null
+      - name: isin
+        description: International Securities Identification Number. Synthetic for portfolio project.
+        data_tests:
+          - not_null
+      - name: cusip
+        description: CUSIP identifier. Synthetic for portfolio project.
+        data_tests:
+          - not_null
+      - name: currency
+        description: Local currency of the position before USD conversion
+        data_tests:
+          - not_null
+      - name: current_price
+        description: Latest available closing price from silver.prices_cleaned. NULL if no price data exists for this ticker.
+      - name: latest_price_date
+        description: Date of the current_price — indicates data staleness. NULL if no price data.
+      - name: market_value_usd
+        description: Current market value in USD. Uses current_price if available, else falls back to notional.
+        data_tests:
+          - not_null
+      - name: days_to_maturity
+        description: Calendar days from today to maturity_date. Negative = matured position.
+        data_tests:
+          - not_null
       - name: direction_multiplier
         description: 1 for LONG, -1 for SHORT
         data_tests:
@@ -124,3 +160,5 @@ models:
           - accepted_values:
               arguments:
                  values: [1, -1]
+      - name: _silver_loaded_at
+        description: Timestamp when the row was loaded into Silver
