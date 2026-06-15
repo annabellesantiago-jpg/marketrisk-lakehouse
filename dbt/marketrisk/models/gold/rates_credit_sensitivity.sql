@@ -73,9 +73,9 @@ WITH
 --         how many were excluded so downstream users can assess coverage.
 matured_counts AS (
   SELECT
-    {{ cast_to_string(desk       ) }} AS desk,
-    {{ cast_to_string(asset_class) }} AS asset_class,
-    {{ cast_to_string(currency   ) }} AS rate_currency,
+    {{ cast_to_string('desk'       ) }}           AS desk,
+    {{ cast_to_string('asset_class'          ) }} AS asset_class,
+    {{ cast_to_string('currency'             ) }} AS rate_currency,
     COUNT(DISTINCT trade_id)          AS matured_position_count
   FROM {{ ref('positions_enriched') }}
   WHERE

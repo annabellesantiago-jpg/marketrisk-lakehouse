@@ -61,6 +61,7 @@ ticker_classification AS (
        {{ cast_to_string('sector') }} AS sector,
        {{ cast_to_string('geography') }} AS geography
       FROM {{ ref('ticker_classifications') }}
+),
 
 -- STEP 2: filter equity positions only and cast all columns explicitly to ensure consistent data types for calculations and downstream use.
 --         We are only calculating equity sensitivity for equity positions.
@@ -72,7 +73,7 @@ AS (
             {{ cast_to_string('p.ticker') }} AS ticker, 
             {{ cast_to_string('p.trade_id') }} AS trade_id,
             {{ cast_to_string('p.direction') }} AS direction,
-            {{ cast_to_date('p.latest_price_date') }} AS latest_price_date,
+            CAST(p.latest_price_date AS DATE) AS latest_price_date,
             {{ cast_to_double('p.current_price') }} AS current_price,            
             {{ cast_to_double('p.notional_usd') }} AS notional_usd,
             {{ cast_to_double('p.direction_multiplier') }} AS direction_multiplier,

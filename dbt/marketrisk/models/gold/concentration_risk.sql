@@ -85,7 +85,7 @@ enriched AS (
       ELSE                                              '10Y+'
     END AS maturity_bucket
   FROM {{ ref('positions_enriched') }}     p
-  LEFT JOIN ticker_classification          tc
+  LEFT JOIN ticker_classifications         tc
     ON UPPER(p.ticker) = UPPER(tc.ticker)
   WHERE p.trade_id IS NOT NULL
 ),

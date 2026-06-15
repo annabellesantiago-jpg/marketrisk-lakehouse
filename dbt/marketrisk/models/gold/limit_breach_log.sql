@@ -68,14 +68,14 @@ today_exposure AS (
     {{ cast_to_double('gross_exposure_usd') }}  AS gross_exposure_usd
   FROM {{ ref('exposure_monitor') }}
   WHERE as_of_date = CURRENT_DATE()
-),
+)
 
 {% if is_incremental() %}
 
 -- ── INCREMENTAL RUN: three-way merge ─────────────────────────────────────
- 
+
 -- Active breach episodes in the target table.
-active_breaches AS (
+, active_breaches AS (
   SELECT
     {{ cast_to_string('desk') }}                          AS desk,
     CAST(breach_start_date             AS DATE)           AS breach_start_date,
