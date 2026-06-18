@@ -1,5 +1,38 @@
 # version:  "3.8"
 
+x-airflow-common: &airflow-common
+  image: apache/airflow:2.9.1
+  environment:
+    AIRFLOW__CORE__EXECUTOR: LocalExecutor
+    AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW__CORE__FERNET_KEY}
+    AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
+    AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+    AIRFLOW__API__AUTH_BACKENDS: 'airflow.api.auth.backend.basic_auth'
+    AIRFLOW__WEBSERVER__SECRET_KEY: ${AIRFLOW__WEBSERVER__SECRET_KEY}
+    AIRFLOW__LOGGING__LOGGING_LEVEL: INFO
+    DATABRICKS_HOST: ${DATABRICKS_HOST}
+    DATABRICKS_TOKEN: ${DATABRICKS_TOKEN}
+    DATABRICKS_HTTP_PATH: ${DATABRICKS_HTTP_PATH}
+    DATABRICKS_CATALOG: ${DATABRICKS_CATALOG}
+    AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+    AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+    AWS_REGION: ${AWS_REGION}
+    S3_BUCKET: ${S3_BUCKET}
+    SLACK_WEBHOOK_URL: ${SLACK_WEBHOOK_URL}
+    _PIP_ADDITIONAL_REQUIREMENTS: dbt-databricks apache-airflow-providers-databricks
+
+  volumes:
+    - ./airflow/dags:/opt/airflow/dags
+    - ./airflow/logs:/opt/airflow/logs
+    - ./airflow/plugins:/opt/airflow/plugins
+    - ./airflow/dbt_profiles:/home/airflow/.dbt
+    - ./dbt/marketrisk:/opt/airflow/dbt/marketrisk
+    - ./ingestion:/opt/airflow/ingestion
+  depends_on:
+    postgres:
+      condition: service_healthy                
+
 services:
 
   minio:
@@ -21,6 +54,61 @@ services:
       timeout: 10s
       retries: 3
 
+  postgres:
+    image: postgres:15
+    container_name: marketrisk-postgres
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "airflow"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  airflow-init:
+    <<: *airflow-common
+    container_name: marketrisk-airflow-init
+    command: >
+      bash -c "
+        airflow db init &&
+        airflow users create 
+          --username ${AIRFLOW_USER:-admin} 
+          --password ${AIRFLOW_PASS:-admin} 
+          --firstname Admin 
+          --lastname User 
+          --role Admin 
+          --email learning_pc2026@outlook.com
+      "
+    restart: on-failure
+
+  airflow-webserver:
+    <<: *airflow-common
+    container_name: marketrisk-airflow-webserver
+    command: webserver    
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+  
+  airflow-scheduler:
+    <<: *airflow-common
+    container_name: marketrisk-airflow-scheduler
+    command: scheduler
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "airflow", "jobs", "check", "--job-type", "SchedulerJob", "--hostname", "$(hostname)"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
   mcp-server:
     build:
       context: ./mcp-server
@@ -31,7 +119,7 @@ services:
     environment:
       AIRFLOW_URL: http://airflow-webserver:8080
       AIRFLOW_USERNAME: ${AIRFLOW_USER:-admin}
-      AIRFLOW_PASSWORD: ${AIRFLOW_PASSWORD:-admin}
+      AIRFLOW_PASSWORD: ${AIRFLOW_PASS:-admin}
       DATABRICKS_HOST: ${DATABRICKS_HOST:-}
       DATABRICKS_TOKEN: ${DATABRICKS_TOKEN:-}
       DATABRICKS_WAREHOUSE_ID: ${DATABRICKS_WAREHOUSE_ID:-}
@@ -41,7 +129,9 @@ services:
       MINIO_BUCKET: ${MINIO_BUCKET}
     depends_on:
       - minio
+      - airflow-webserver
     restart: unless-stopped
 
 volumes:
   minio_data:
+  postgres_data:
