@@ -55,6 +55,12 @@ with DAG(
         sla = timedelta(minutes=10)
     )
 
+    ingest_positions = BashOperator(
+        task_id = 'ingest_positions',
+        bash_command = 'python /opt/airflow/ingestion/generate_positions.py',
+        sla = timedelta(minutes=10)
+    )
+
     ingest_reference_data = BashOperator(
         task_id = 'ingest_reference_data',
         bash_command = 'python /opt/airflow/ingestion/fetch_reference_data.py',
@@ -67,8 +73,60 @@ with DAG(
         sla=timedelta(minutes=15),
     )
 
-    ingest_positions = BashOperator(
-        task_id = 'ingest_positions',
-        bash_command = 'python opt/airflow/ingestion/generate_positions.py',
-        sla = timedelta(minutes=30)
+    # -- STEP 2: Load dbt seeds
+    dbt_seed = BashOperator(
+        task_id='dbt_seed',
+        bash_command=f'cd {DBT_DIR} && dbt seed --profiles-dir {DBT_PROFILES}',
+        sla=timedelta(minutes=10)
     )
+
+    # -- STEP 3: Test seeds before progressing
+    dbt_test_seeds = BashOperator(
+        task_id='dbt_test_seeds',
+        bash_command=f'cd {DBT_DIR} && dbt test --select seeds --profiles-dir {DBT_PROFILES}',
+        sla=timedelta(minutes=10)
+    )
+
+    # -- STEP 4: Build Silver layer
+    dbt_silver = BashOperator(
+        task_id='dbt_silver',
+        bash_command=f'cd {DBT_DIR} && dbt run --select silver --profiles-dir {DBT_PROFILES}',
+        sla=timedelta(minutes=20)
+    )
+
+    # -- STEP 5: Test Silver layer
+    dbt_test_silver = BashOperator(
+        task_id='dbt_test_silver',
+        bash_command=f'cd {DBT_DIR} && dbt test --select silver --profiles-dir {DBT_PROFILES}',
+        sla=timedelta(minutes=10)
+    )
+
+    # -- STEP 6: Build Gold layer
+    dbt_gold = BashOperator(
+        task_id='dbt_gold',
+        bash_command=f'cd {DBT_DIR} && dbt run --select gold --profiles-dir {DBT_PROFILES}',
+        sla=timedelta(minutes=30)
+    )
+
+    # -- STEP 7: Test Gold layer
+    dbt_test_gold = BashOperator(
+        task_id='dbt_test_gold',
+        bash_command=f'cd {DBT_DIR} && dbt test --select gold --profiles-dir {DBT_PROFILES}',
+        sla=timedelta(minutes=10)
+    )
+
+    # -- Option B: DatabricksRunNowOperator (uncomment when Databricks Job is set up)
+    # from airflow.providers.databricks.operators.databricks import DatabricksRunNowOperator
+    #
+    # dbt_databricks = DatabricksRunNowOperator(
+    #     task_id='dbt_databricks',
+    #     databricks_conn_id='databricks_default',
+    #     job_id=REPLACE_WITH_YOUR_JOB_ID,
+    # )
+
+    # -- Pipeline dependency chain
+    ingest_prices >> ingest_reference_data
+    [ingest_reference_data, ingest_positions] >> upload_to_s3
+    upload_to_s3 >> dbt_seed >> dbt_test_seeds
+    dbt_test_seeds >> dbt_silver >> dbt_test_silver
+    dbt_test_silver >> dbt_gold >> dbt_test_gold
