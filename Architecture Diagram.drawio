@@ -208,8 +208,8 @@
         <mxCell id="MzbM_mRJEkIEzOc4ZALW-61" parent="1" style="shape=stencil(lVfbctpADP0av2q0q70+p+l/ZCakMKWQIaSXv69cuoYV+GDezKLj1eVIOh7k6WP98r4aPH8cD/vvq1+b1+N6kC+D95vdenXYHPVpkOdBnt72h9W3w/5z93r6/f4yWo5PP/Y/xzf8PuEClTSCPP9pB6H+O/h6Mt9udp155c7c6UmB9qWzH98f5+0jce7s5Z596P0JgXKet0/kXWcf9Ubgf6biO/ukCXPz9o6pSgfIQp4BIFLqIy5MEdzgPXFfsaJBgZBlel8DVCZBNbsGeIoBFMFTiVcAEHRSj6N16X+ib5ehEvd1KIUY8LRUqn0MRYkBADXbGIqDLtVCQSwA3lCo1h7gyYFK10ohW0AGzaCAYoIWShhgXdIsoaAVYFyKVAQCcj8AlK0FkG8M2sSQcdCa1itqSIIASRaQUAy5jZQLQEQuZfJiAQ6lVXPCNmjUogowLappDYhLicRUOpJglyz5Qpudc4BsghYMyOSCpXdALmVKpnCudflcpX2wgIypYRtIb0CA2pJ4EQOa3mM/eJslwQ1Uo62DAPI5ZmJDJt2SOIhytVEgv2v7+4KuSDUowBmXtCHwrLQ36AlqiIcBTKEfTNXBWakrKPRkqpNYmVtysQ9aCVzvrNG+5Ua2IDHGbQdOauxc/NviobZFvtAnz+T7K6rADeE0CNNzeJQlqxCzFg6wVdrOnBRZbivmtkNWakStC2g4bt01KUodlCBDbJWJKlbk/1V33lHE3PTpQsXNbdMsE/Tc+nByH+4RtmvEt4MZ89wXy0FnnN0IDMX81LBncw8y75sQP5vDXrHKBZtPY3yZM2LbBIcamsRflkil4CNlmqTxMhI8/M14x1wfzp+nb5vt9vR1e/m//ZzVo9OnsDz/BQ==);lineShape=1;strokeColor=light-dark(transparent,#FFB570);" value="" vertex="1">
           <mxGeometry height="157.69141752718127" width="300.7377643490963" x="1305.2623229245291" y="838.6642333075431" as="geometry" />
         </mxCell>
-        <mxCell id="MzbM_mRJEkIEzOc4ZALW-66" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F5F5F5;strokeColor=#AAAAAA;fontSize=11;verticalAlign=middle;" value="&lt;b&gt;Grafana + Prometheus&lt;/b&gt;&lt;br&gt;&lt;font color=&#39;#555555&#39;&gt;Pipeline health · SLA alerts · Docker · ~400MB&lt;/font&gt;" vertex="1">
-          <mxGeometry height="64" width="400" x="90" y="644" as="geometry" />
+        <mxCell id="MzbM_mRJEkIEzOc4ZALW-66" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F5F5F5;strokeColor=#AAAAAA;fontSize=11;verticalAlign=middle;" value="&lt;b&gt;StatsD Exporter&lt;/b&gt;&lt;div&gt;Translate Airflow&#39;s statsd metrics into format Prometheus can scrape&lt;/div&gt;" vertex="1">
+          <mxGeometry height="64" width="400" x="64" y="658" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
