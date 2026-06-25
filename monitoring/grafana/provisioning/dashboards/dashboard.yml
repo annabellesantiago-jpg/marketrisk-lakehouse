@@ -1,0 +1,11 @@
+api_version: 1
+
+providers:
+  - name: 'default'
+    orgId: 1
+    folder: 'MarketRisk'
+    type: file
+    disableDeletion: false
+    editable: true
+    options:
+      path: /var/lib/grafana/dashboards

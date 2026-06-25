@@ -13,6 +13,9 @@ x-airflow-common: &airflow-common
     AIRFLOW__API__AUTH_BACKENDS: 'airflow.api.auth.backend.basic_auth'
     AIRFLOW__WEBSERVER__SECRET_KEY: ${AIRFLOW__WEBSERVER__SECRET_KEY}
     AIRFLOW__LOGGING__LOGGING_LEVEL: INFO
+    AIRFLOW__METRICS__STATSD_ON: 'true'
+    AIRFLOW__METRICS__STATSD_HOST: statsd-exporter
+    AIRFLOW__METRICS__STATSD_PORT: '8125'
     DATABRICKS_HOST: ${DATABRICKS_HOST}
     DATABRICKS_TOKEN: ${DATABRICKS_TOKEN}
     DATABRICKS_HTTP_PATH: ${DATABRICKS_HTTP_PATH}
@@ -123,6 +126,45 @@ services:
       - airflow-webserver
     restart: unless-stopped
 
+  statsd-exporter:
+    image: prom/statsd-exporter:v0.26.0
+    container_name: marketrisk-statsd-exporter
+    ports:
+      - "9102:9102"
+      - "8125:8125/udp"
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:v2.51.0
+    container_name: marketrisk-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    restart: unless-stopped
+    depends_on: 
+      - statsd-exporter
+  
+  grafana:
+    image: grafana/grafana:10.4.0
+    container_name: marketrisk-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards
+      - grafana_data:/var/lib/grafana
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+
 volumes:
   minio_data:
   postgres_data:
+  prometheus_data:
+  grafana_data:
+
