@@ -15,12 +15,21 @@ This file contains only:
 """
 
 import os
+from datetime import datetime, timezone
 from dotenv import load_dotenv
 
 # Load .env file if present (local development only).
 # In production (Airflow on EC2), environment variables are set directly
 # on the host and .env is not used.
 load_dotenv()
+
+# -- sysdate to be used for partitioning of the file in S3 : year/month/day
+_run_dt    = datetime.strptime(os.getenv("RUN_DATE", datetime.now(timezone.utc).strftime("%Y-%m-%d")), "%Y-%m-%d")
+RUN_DATE   = _run_dt.strftime("%Y-%m-%d")   # kept for logging/display
+RUN_YEAR   = _run_dt.strftime("%Y")
+RUN_MONTH  = _run_dt.strftime("%m")
+RUN_DAY    = _run_dt.strftime("%d")
+
 
 # ── AWS S3 ────────────────────────────────────────────────────────────────
 # Single source of truth for the S3 bucket and region.
@@ -77,7 +86,7 @@ PRICE_HISTORY_DAYS = 400
 TOTAL_POSITIONS = 300   # 75 positions per desk × 4 desks
 RANDOM_SEED     = 42    # Fixed seed — ensures reproducible synthetic data
 
-# Trading desks — must match desk names used in dbt Gold models and Power BI
+# Trading desks — must match desk names used in dbt Gold models and Apache Superset
 DESKS = [
     "FX Desk",
     "Equity Desk",
