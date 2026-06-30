@@ -21,32 +21,25 @@ In a real bank:
 ─────────────────────────────────────────────────────────────────────────────
 """
 
+import logging
 import pandas as pd
 from datetime import datetime, date, timezone
-from pathlib import Path
 import sys
 import os
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from ingestion.config import DESK_LIMITS, FX_TICKERS
+from ingestion.config import DESK_LIMITS, FX_TICKERS, RUN_DATE, RUN_YEAR, RUN_MONTH, RUN_DAY, S3_BUCKET
+from ingestion.s3_utils import get_client, verify_bucket, upload_df, read_df
 
-OUTPUT_DIR = Path("data/raw/reference")
-PRICES_DIR = Path("data/raw/prices")
-OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+logger = logging.getLogger(__name__)
 
 
-def get_live_fx_rates() -> dict:
+def get_live_fx_rates(client) -> dict:
     """
-    Read the most recent closing price from each FX price CSV file
-    written by fetch_market_data.py.
+    Read the most recent closing price from each FX price CSV written
+    to S3 by fetch_market_data.py.
 
     FX pair format:  EURUSD=X  →  1 EUR = {close} USD
-                     GBPUSD=X  →  1 GBP = {close} USD
-                     JPYUSD=X  →  1 JPY = {close} USD
-
-    The close price of an XY=X pair IS the rate_vs_usd for currency X —
-    no conversion required.
-
     Currency code extracted by stripping "USD" from the normalized filename:
       EURUSD → EUR    GBPUSD → GBP    JPYUSD → JPY
 
@@ -62,19 +55,13 @@ def get_live_fx_rates() -> dict:
         # EURUSD=X  →  EURUSD.csv
         filename  = raw_ticker.replace("=X", "").replace(".", "_")
         currency  = filename.replace("USD", "")   # EURUSD → EUR
-        file_path = PRICES_DIR / f"{filename}.csv"
+        key = f"raw/prices/year={RUN_YEAR}/month={RUN_MONTH}/day={RUN_DAY}/{filename}.csv"
 
-        if not file_path.exists():
-            raise FileNotFoundError(
-                f"Price file not found: {file_path}\n"
-                f"Run fetch_market_data.py before fetch_reference_data.py."
-            )
-
-        df = pd.read_csv(file_path)
+        df = read_df(client, S3_BUCKET, key)
 
         if df.empty:
             raise ValueError(
-                f"Price file is empty: {file_path}\n"
+                f"Price file is empty: s3://{S3_BUCKET}/{key}\n"
                 f"Yahoo Finance may have returned no data for {raw_ticker}."
             )
 
@@ -85,7 +72,7 @@ def get_live_fx_rates() -> dict:
         as_of      = latest["date"].strftime("%Y-%m-%d")
 
         rates[currency] = {"rate": rate, "as_of": as_of}
-        print(f"  {currency:<4}  rate_vs_usd = {rate:<12}  (close on {as_of})")
+        logger.info("%s  rate_vs_usd = %s  (close on %s)", currency, rate, as_of)
 
     return rates
 
@@ -108,7 +95,7 @@ def generate_desk_limits() -> pd.DataFrame:
             "limit_currency": "USD",
             "effective_date": effective_date,
             "review_date":    review_date,
-            "generated_at":  datetime.utcnow().isoformat(),
+            "generated_at":  datetime.now(timezone.utc).isoformat(),
         }
         for desk, limit in DESK_LIMITS.items()
     ]
@@ -144,36 +131,40 @@ def generate_fx_rates(rates: dict) -> pd.DataFrame:
 
 
 def main():
-    print("\nGenerating reference data...")
+    logger.info("\nGenerating reference data for run date: %s", RUN_DATE)
+
+    client = get_client()
+    verify_bucket(client, S3_BUCKET)
 
     # ── Desk limits ──────────────────────────────────────────────────────
     limits      = generate_desk_limits()
-    limits_path = OUTPUT_DIR / "desk_limits.csv"
-    limits.to_csv(limits_path, index=False)
-    print(f"\nDesk limits ({len(limits)} rows) → {limits_path}")
-    print(
-        limits[["desk", "limit_usd", "effective_date", "review_date"]]
-        .to_string(index=False)
+    key    = f"raw/reference/year={RUN_YEAR}/month={RUN_MONTH}/day={RUN_DAY}/desk_limits.csv"
+    upload_df(client, limits, S3_BUCKET, key)
+    logger.info(
+        "Desk limits (%d rows):\n%s",
+        len(limits),
+        limits[["desk", "limit_usd", "effective_date", "review_date"]].to_string(index=False)
     )
 
     # ── FX rates — live from price files ─────────────────────────────────
-    print(f"\nReading latest FX close prices from {PRICES_DIR}...")
+    logger.info("Reading latest FX close prices from S3....")
     try:
         live_rates = get_live_fx_rates()
     except FileNotFoundError as e:
-        print(f"\nERROR: {e}")
+        logger.error("\nERROR: %s",)
         sys.exit(1)
 
     fx      = generate_fx_rates(live_rates)
-    fx_path = OUTPUT_DIR / "fx_rates.csv"
-    fx.to_csv(fx_path, index=False)
+    key    = f"raw/reference/year={RUN_YEAR}/month={RUN_MONTH}/day={RUN_DAY}/fx_rates.csv"
+    upload_df(client, fx, S3_BUCKET, key)
     print(f"\nFX rates ({len(fx)} rows) → {fx_path}")
-    print(
-        fx[["currency", "rate_vs_usd", "as_of_date"]]
-        .to_string(index=False)
+    logger.info(
+        "FX rates (%d rows):\n%s",
+        len(fx),
+        fx[["currency", "rate_vs_usd", "as_of_date"]].to_string(index=False)
     )
 
-    print("\nReference data generation complete.")
+    logger.info("Reference data generation complete.")
 
 
 if __name__ == "__main__":

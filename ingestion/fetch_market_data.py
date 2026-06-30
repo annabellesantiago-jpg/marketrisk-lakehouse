@@ -2,30 +2,30 @@
 fetch_market_data.py
 ─────────────────────────────────────────────────────────────────────────────
 Pulls FX rates and equity prices from Yahoo Finance.
-Saves one CSV per ticker into data/raw/prices/
+Writes one CSV per ticker directly to AWS S3 under:
+  raw/prices/year={YYYY}/month={MM}/day={DD}/{ticker}.csv
 
 Column names are saved in lowercase to match the Bronze Delta table schema.
 The ticker column stores the raw Yahoo Finance symbol (e.g. EURUSD=X, HSBA.L)
 exactly as received — Silver layer normalises these to match positions.
 
 File naming uses the same normalization as generate_positions.py so filenames
-are human-readable on disk, but the ticker column inside the CSV retains the
-raw Yahoo Finance format for Bronze fidelity.
+are consistent with the tickers stored in bronze.positions.
 ─────────────────────────────────────────────────────────────────────────────
 """
 
 import yfinance as yf
 import pandas as pd
+import logging
 from datetime import datetime, timedelta, timezone
-from pathlib import Path
 import sys
 import os
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from ingestion.config import ALL_TICKERS, PRICE_HISTORY_DAYS
+from ingestion.config import ALL_TICKERS, PRICE_HISTORY_DAYS, S3_BUCKET, RUN_DATE, RUN_YEAR, RUN_MONTH, RUN_DAY
+from ingestion.s3_utils import get_client, verify_bucket, upload_df
 
-OUTPUT_DIR = Path("data/raw/prices")
-OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+logger = logging.getLogger(__name__)
 
 
 def ticker_to_filename(ticker: str) -> str:
@@ -56,7 +56,7 @@ def fetch_ticker(ticker: str, days: int) -> pd.DataFrame:
     end_date   = datetime.today()
     start_date = end_date - timedelta(days=days)
 
-    print(f"  Fetching {ticker:<12} from {start_date:%Y-%m-%d} to {end_date:%Y-%m-%d}")
+    logger.info("Fetching %s from %s to %s", ticker, start_date.strftime("%Y-%m-%d"), end_date.strftime("%Y-%m-%d"))
 
     data = yf.download(
         ticker,
@@ -67,8 +67,7 @@ def fetch_ticker(ticker: str, days: int) -> pd.DataFrame:
     )
 
     if data.empty:
-        print(f"  WARNING: No data returned for {ticker}. "
-              f"Check if the ticker symbol is still valid.")
+        logger.warning("No data returned for %s — check if ticker is still valid", ticker)
         return pd.DataFrame()
 
     # Flatten MultiIndex columns produced by yfinance for single tickers
@@ -100,11 +99,12 @@ def fetch_ticker(ticker: str, days: int) -> pd.DataFrame:
 
 
 def main():
-    print(
-        f"\nFetching {len(ALL_TICKERS)} tickers "
-        f"({PRICE_HISTORY_DAYS} calendar days of history)...\n"
-    )
+    logger.info("\nFetching %d tickers (%d calendar days of history) for run date %s...\n", 
+                len(ALL_TICKERS), PRICE_HISTORY_DAYS, RUN_DATE)
 
+    client = get_client()
+    verify_bucket(client, S3_BUCKET)
+    
     saved   = 0
     skipped = 0
 
@@ -115,18 +115,12 @@ def main():
             skipped += 1
             continue
 
-        # Use normalized filename for readability on disk
         filename    = ticker_to_filename(ticker)
-        output_file = OUTPUT_DIR / f"{filename}.csv"
-        df.to_csv(output_file, index=False)
-        print(f"  Saved {len(df):>4} rows → {output_file}")
+        key = f"raw/prices/year={RUN_YEAR}/month={RUN_MONTH}/day={RUN_DAY}/{filename}.csv"
+        upload_df(client, df, S3_BUCKET, key)
         saved += 1
 
-    print(
-        f"\nFetch complete — "
-        f"{saved} tickers saved, {skipped} skipped."
-    )
-    print(f"Files in: {OUTPUT_DIR}")
+    logger.info("\nFetch complete - %d tickers uploaded, %d skipped.", saved, skipped)
 
 
 if __name__ == "__main__":

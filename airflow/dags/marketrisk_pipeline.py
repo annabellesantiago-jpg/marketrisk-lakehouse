@@ -52,26 +52,23 @@ with DAG(
     ingest_prices = BashOperator(
         task_id = 'ingest_prices',
         bash_command = 'python /opt/airflow/ingestion/fetch_market_data.py',
+        env = {'RUN_DATE': {{'ds'}}},
         sla = timedelta(minutes=10)
     )
 
     ingest_positions = BashOperator(
         task_id = 'ingest_positions',
         bash_command = 'python /opt/airflow/ingestion/generate_positions.py',
+        env = {'RUN_DATE': {{'ds'}}},
         sla = timedelta(minutes=10)
     )
 
     ingest_reference_data = BashOperator(
         task_id = 'ingest_reference_data',
         bash_command = 'python /opt/airflow/ingestion/fetch_reference_data.py',
+        env = {'RUN_DATE': {{'ds'}}},
         sla = timedelta(minutes=10)
     )    
-
-    upload_to_s3 = BashOperator(
-        task_id = 'upload_to_s3',
-        bash_command = 'python /opt/airflow/ingestion/upload_to_s3.py',
-        sla=timedelta(minutes=15),
-    )
 
     # -- STEP 2: Load dbt seeds
     dbt_seed = BashOperator(
@@ -126,7 +123,6 @@ with DAG(
 
     # -- Pipeline dependency chain
     ingest_prices >> ingest_reference_data
-    [ingest_reference_data, ingest_positions] >> upload_to_s3
-    upload_to_s3 >> dbt_seed >> dbt_test_seeds
+    [ingest_reference_data, ingest_positions] >> dbt_seed >> dbt_test_seeds
     dbt_test_seeds >> dbt_silver >> dbt_test_silver
     dbt_test_silver >> dbt_gold >> dbt_test_gold

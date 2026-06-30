@@ -16,12 +16,12 @@ Realism rules enforced:
 ─────────────────────────────────────────────────────────────────────────────
 """
 
+import logging
 import random
 import string
 import pandas as pd
 import numpy as np
-from datetime import date, timedelta
-from pathlib import Path
+from datetime import date, timedelta, timezone
 import sys
 import os
 
@@ -31,12 +31,18 @@ from ingestion.config import (
     EQUITY_TICKERS,
     COUNTERPARTIES,
     TRADER_IDS,
-    TOTAL_POSITIONS,
     RANDOM_SEED,
+    S3_BUCKET, 
+    RUN_DATE, 
+    RUN_YEAR, 
+    RUN_MONTH,
+    RUN_DAY
 )
+from ingestion.s3_utils import get_client, verify_bucket, upload_df
 
-OUTPUT_DIR = Path("data/raw/positions")
-OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+logger = logging.getLogger(__name__)
+
+
 
 # ── Ticker normalization ──────────────────────────────────────────────────
 # Normalize to match bronze.positions format used by Silver join logic.
@@ -230,7 +236,7 @@ def generate_book() -> pd.DataFrame:
                 "currency":        instrument["currency"],
                 "trade_date":      trade_date.strftime("%Y-%m-%d"),
                 "maturity_date":   maturity_date.strftime("%Y-%m-%d"),
-                "generated_at":   pd.Timestamp.utcnow().isoformat(),
+                "generated_at":   pd.Timestamp.now(timezone.utc).isoformat(),
             })
             counter += 1
 
@@ -282,16 +288,16 @@ def validate(df: pd.DataFrame) -> None:
         assert (df[df["desk"] == desk]["asset_class"] == ac).all(), \
             f"{desk} contains non-{ac} positions — desk/asset_class mismatch"
 
-    print(f"\nValidation PASSED — {len(df)} positions")
-    print("\nPositions by desk:")
-    print(
+    logger.info("Validation PASSED — %d positions", len(df))
+    logger.info(
+        "Positions by desk:\n%s",
         df.groupby(["desk", "asset_class", "instrument_type"])["trade_id"]
           .count()
           .rename("count")
           .to_string()
     )
-    print("\nISIN coverage by asset class:")
-    print(
+    logger.info(
+        "ISIN coverage by asset class:\n%s",
         df.groupby("asset_class")["isin"]
           .apply(lambda x: f"{x.notna().sum()}/{len(x)} have ISIN")
           .to_string()
@@ -299,14 +305,16 @@ def validate(df: pd.DataFrame) -> None:
 
 
 def main():
-    print("\nGenerating synthetic trading book...")
+    logger.info("Generating synthetic trading book for run date %s", RUN_DATE)
     df = generate_book()
     validate(df)
 
-    path = OUTPUT_DIR / "positions.csv"
-    df.to_csv(path, index=False)
-    print(f"\nSaved {len(df)} positions → {path}")
-    print(f"\nSample (first 3 rows):\n{df.head(3).to_string()}")
+    key = f"raw/positions/year={RUN_YEAR}/month={RUN_MONTH}/day={RUN_DAY}/positions.csv"
+    client = get_client()
+    verify_bucket(client, S3_BUCKET)
+    upload_df(client, df, S3_BUCKET,key)
+
+    logger.info("Sample (first 3 rows):\n%s", df.head(3).to_string())
 
 
 if __name__ == "__main__":
