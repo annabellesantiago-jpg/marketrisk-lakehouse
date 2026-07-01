@@ -16,6 +16,7 @@ are consistent with the tickers stored in bronze.positions.
 
 import yfinance as yf
 import pandas as pd
+import time
 import logging
 from datetime import datetime, timedelta, timezone
 import sys
@@ -56,15 +57,24 @@ def fetch_ticker(ticker: str, days: int) -> pd.DataFrame:
     end_date   = datetime.today()
     start_date = end_date - timedelta(days=days)
 
-    logger.info("Fetching %s from %s to %s", ticker, start_date.strftime("%Y-%m-%d"), end_date.strftime("%Y-%m-%d"))
+    data = pd.DataFrame()
 
-    data = yf.download(
-        ticker,
-        start=start_date,
-        end=end_date,
-        progress=False,
-        auto_adjust=True,
-    )
+    for attempt in range(1, 3):        
+        logger.info("Fetching %s from %s to %s", ticker, start_date.strftime("%Y-%m-%d"), end_date.strftime("%Y-%m-%d"))
+        data = yf.download(
+            ticker,
+            start=start_date,
+            end=end_date,
+            progress=False,
+            auto_adjust=True,
+        )
+
+        if not data.empty:
+            break
+        
+        wait = 5 * attempt #5s, 10s, 15s
+        logger.warning("No data for %s - waiting %d before retry", ticker, wait)
+        time.sleep(wait)
 
     if data.empty:
         logger.warning("No data returned for %s — check if ticker is still valid", ticker)
@@ -119,6 +129,7 @@ def main():
         key = f"raw/prices/year={RUN_YEAR}/month={RUN_MONTH}/day={RUN_DAY}/{filename}.csv"
         upload_df(client, df, S3_BUCKET, key)
         saved += 1
+        time.sleep(3) # wait 1s to fetch the next ticker
 
     logger.info("\nFetch complete - %d tickers uploaded, %d skipped.", saved, skipped)
 

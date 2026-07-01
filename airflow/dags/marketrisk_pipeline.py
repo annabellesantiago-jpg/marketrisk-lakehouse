@@ -53,7 +53,7 @@ with DAG(
         task_id = 'ingest_prices',
         bash_command = 'python /opt/airflow/ingestion/fetch_market_data.py',
         env = {'RUN_DATE': {{'ds'}}},
-        sla = timedelta(minutes=10)
+        sla = timedelta(minutes=15)
     )
 
     ingest_positions = BashOperator(

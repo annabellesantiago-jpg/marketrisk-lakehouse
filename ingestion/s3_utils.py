@@ -9,6 +9,7 @@ In actual production set-up:
     - the client setup here would be replaced by a Secrets Manager call (example, HashiCorp Vault, AWS secret manager)
 """
 
+import os
 import io
 import logging
 import boto3
