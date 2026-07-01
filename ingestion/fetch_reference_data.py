@@ -149,7 +149,7 @@ def main():
     # ── FX rates — live from price files ─────────────────────────────────
     logger.info("Reading latest FX close prices from S3....")
     try:
-        live_rates = get_live_fx_rates()
+        live_rates = get_live_fx_rates(client)
     except FileNotFoundError as e:
         logger.error("\nERROR: %s",)
         sys.exit(1)
@@ -157,7 +157,6 @@ def main():
     fx      = generate_fx_rates(live_rates)
     key    = f"raw/reference/year={RUN_YEAR}/month={RUN_MONTH}/day={RUN_DAY}/fx_rates.csv"
     upload_df(client, fx, S3_BUCKET, key)
-    print(f"\nFX rates ({len(fx)} rows) → {fx_path}")
     logger.info(
         "FX rates (%d rows):\n%s",
         len(fx),
