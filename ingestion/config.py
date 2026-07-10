@@ -35,8 +35,8 @@ RUN_DAY    = _run_dt.strftime("%d")
 # ── AWS S3 ────────────────────────────────────────────────────────────────
 # Single source of truth for the S3 bucket and region.
 # All ingestion scripts import these — change here to update everywhere.
-S3_BUCKET  = "market-risk-dev-raw-593153124201-ap-southeast-2-an"
-AWS_REGION = "ap-southeast-2"
+S3_BUCKET  = os.environ["S3_BUCKET"]
+AWS_REGION = os.environ["AWS_REGION"]
 
 # S3 prefix (folder) for each data type.
 # Matches the Databricks External Location path structure.
@@ -49,8 +49,8 @@ S3_PREFIX_REFERENCE = "reference/"
 #   AWS_ACCESS_KEY_ID=your_key
 #   AWS_SECRET_ACCESS_KEY=your_secret
 # boto3 also reads from ~/.aws/credentials automatically if set via aws configure.
-AWS_ACCESS_KEY_ID     = os.getenv("AWS_ACCESS_KEY_ID", "")
-AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY", "")
+AWS_ACCESS_KEY_ID     = os.environ["AWS_ACCESS_KEY_ID"]
+AWS_SECRET_ACCESS_KEY = os.environ["AWS_SECRET_ACCESS_KEY"]
 
 # ── Yahoo Finance — market data tickers ──────────────────────────────────
 # Raw Yahoo Finance ticker symbols — used by fetch_market_data.py as-is.
@@ -119,12 +119,13 @@ TRADER_IDS = {
 # ── Databricks ────────────────────────────────────────────────────────────
 # Connection details read from environment — never hardcoded.
 # dbt connection lives in ~/.dbt/profiles.yml, not here.
-DATABRICKS_CATALOG = "market_risk_dev"
-DATABRICKS_HOST    = os.getenv("DATABRICKS_HOST", "")
-DATABRICKS_TOKEN   = os.getenv("DATABRICKS_TOKEN", "")
+DATABRICKS_CATALOG = os.environ["DATABRICKS_CATALOG"]
+DATABRICKS_HOST    = os.environ["DATABRICKS_HOST"]
+DATABRICKS_TOKEN   = os.environ["DATABRICKS_TOKEN"]
+DATABRICKS_HTTP_PATH = os.environ["DATABRICKS_HTTP_PATH"]
 
 # ── API keys ──────────────────────────────────────────────────────────────
-ALPHA_VANTAGE_KEY = os.getenv("ALPHA_VANTAGE_KEY", "")
+ALPHA_VANTAGE_KEY = os.getenv("ALPHA_VANTAGE_KEY")
 
 
 def setup_logging():
