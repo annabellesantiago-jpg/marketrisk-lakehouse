@@ -36,7 +36,8 @@ from ingestion.config import (
     RUN_DATE, 
     RUN_YEAR, 
     RUN_MONTH,
-    RUN_DAY
+    RUN_DAY,
+    setup_logging
 )
 from ingestion.s3_utils import get_client, verify_bucket, upload_df
 
@@ -318,4 +319,5 @@ def main():
 
 
 if __name__ == "__main__":
+    setup_logging()
     main()

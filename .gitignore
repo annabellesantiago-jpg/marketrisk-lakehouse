@@ -7,9 +7,6 @@ __pycache__/
 *.pyc
 *.pyo
 
-# -- ignore generated data files --
-data/
-
 # -- ignore generated logs --
 logs/
 

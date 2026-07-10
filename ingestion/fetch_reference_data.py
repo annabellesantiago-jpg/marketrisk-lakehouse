@@ -23,12 +23,13 @@ In a real bank:
 
 import logging
 import pandas as pd
+import pathlib
 from datetime import datetime, date, timezone
 import sys
 import os
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from ingestion.config import DESK_LIMITS, FX_TICKERS, RUN_DATE, RUN_YEAR, RUN_MONTH, RUN_DAY, S3_BUCKET
+from ingestion.config import FX_TICKERS, RUN_DATE, RUN_YEAR, RUN_MONTH, RUN_DAY, S3_BUCKET, setup_logging
 from ingestion.s3_utils import get_client, verify_bucket, upload_df, read_df
 
 logger = logging.getLogger(__name__)
@@ -132,30 +133,30 @@ def generate_fx_rates(rates: dict) -> pd.DataFrame:
 
 def main():
     logger.info("\nGenerating reference data for run date: %s", RUN_DATE)
-
     client = get_client()
     verify_bucket(client, S3_BUCKET)
 
-    # ── Desk limits ──────────────────────────────────────────────────────
-    limits      = generate_desk_limits()
-    key    = f"raw/reference/year={RUN_YEAR}/month={RUN_MONTH}/day={RUN_DAY}/desk_limits.csv"
+    # ── Desk limits that is versioned and maintained usually by Head of Risk ──────────────────────────
+    limits_path = pathlib.Path(__file__).parent.parent / "data" / "raw" / "reference" / "desk_limits.csv"
+    limits = pd.read_csv(limits_path)
+    key    = f"raw/reference/desk_limits.csv"
     upload_df(client, limits, S3_BUCKET, key)
     logger.info(
         "Desk limits (%d rows):\n%s",
         len(limits),
         limits[["desk", "limit_usd", "effective_date", "review_date"]].to_string(index=False)
     )
-
     # ── FX rates — live from price files ─────────────────────────────────
     logger.info("Reading latest FX close prices from S3....")
+
     try:
         live_rates = get_live_fx_rates(client)
     except FileNotFoundError as e:
-        logger.error("\nERROR: %s",)
+        logger.error("\nERROR: %s", e)
         sys.exit(1)
 
     fx      = generate_fx_rates(live_rates)
-    key    = f"raw/reference/year={RUN_YEAR}/month={RUN_MONTH}/day={RUN_DAY}/fx_rates.csv"
+    key    = f"raw/reference/fx_rates.csv"
     upload_df(client, fx, S3_BUCKET, key)
     logger.info(
         "FX rates (%d rows):\n%s",
@@ -163,8 +164,9 @@ def main():
         fx[["currency", "rate_vs_usd", "as_of_date"]].to_string(index=False)
     )
 
+
     logger.info("Reference data generation complete.")
 
-
 if __name__ == "__main__":
+    setup_logging()
     main()

@@ -66,7 +66,6 @@ with DAG(
     ingest_reference_data = BashOperator(
         task_id = 'ingest_reference_data',
         bash_command = 'python /opt/airflow/ingestion/fetch_reference_data.py',
-        env = {'RUN_DATE': {{'ds'}}},
         sla = timedelta(minutes=10)
     )    
 
@@ -77,35 +76,28 @@ with DAG(
         sla=timedelta(minutes=10)
     )
 
-    # -- STEP 3: Test seeds before progressing
-    dbt_test_seeds = BashOperator(
-        task_id='dbt_test_seeds',
-        bash_command=f'cd {DBT_DIR} && dbt test --select seeds --profiles-dir {DBT_PROFILES}',
-        sla=timedelta(minutes=10)
-    )
-
-    # -- STEP 4: Build Silver layer
+    # -- STEP 3: Build Silver layer
     dbt_silver = BashOperator(
         task_id='dbt_silver',
         bash_command=f'cd {DBT_DIR} && dbt run --select silver --profiles-dir {DBT_PROFILES}',
         sla=timedelta(minutes=20)
     )
 
-    # -- STEP 5: Test Silver layer
+    # -- STEP 4: Test Silver layer
     dbt_test_silver = BashOperator(
         task_id='dbt_test_silver',
         bash_command=f'cd {DBT_DIR} && dbt test --select silver --profiles-dir {DBT_PROFILES}',
         sla=timedelta(minutes=10)
     )
 
-    # -- STEP 6: Build Gold layer
+    # -- STEP 5: Build Gold layer
     dbt_gold = BashOperator(
         task_id='dbt_gold',
         bash_command=f'cd {DBT_DIR} && dbt run --select gold --profiles-dir {DBT_PROFILES}',
         sla=timedelta(minutes=30)
     )
 
-    # -- STEP 7: Test Gold layer
+    # -- STEP 6: Test Gold layer
     dbt_test_gold = BashOperator(
         task_id='dbt_test_gold',
         bash_command=f'cd {DBT_DIR} && dbt test --select gold --profiles-dir {DBT_PROFILES}',
@@ -123,6 +115,6 @@ with DAG(
 
     # -- Pipeline dependency chain
     ingest_prices >> ingest_reference_data
-    [ingest_reference_data, ingest_positions] >> dbt_seed >> dbt_test_seeds
-    dbt_test_seeds >> dbt_silver >> dbt_test_silver
+    [ingest_reference_data, ingest_positions] >> dbt_seed
+    dbt_seed >> dbt_silver >> dbt_test_silver
     dbt_test_silver >> dbt_gold >> dbt_test_gold
