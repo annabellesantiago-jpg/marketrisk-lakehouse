@@ -96,3 +96,7 @@ COMMENT 'FX conversion rates vs USD for reference data'
 TBLPROPERTIES (
   'delta.autoOptimize.optimizeWrite' = 'true'
 );
+
+-- Silver and Gold tables are managed by dbt.
+-- Run: dbt run --profiles-dir ~/.dbt
+-- to create and populate Silver and Gold layers.
