@@ -1,0 +1,36 @@
+name: Load Desk Limits
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'data/raw/reference/desk_limits.csv'
+
+jobs:
+  load-desk-limits:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install pandas boto3 python-dotenv databricks-sql-connector
+
+      - name: Run load desk limits
+        env:
+          AWS_ACCESS_KEY_ID:       ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY:   ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION:              ${{ secrets.AWS_REGION }}
+          S3_BUCKET:               ${{ secrets.S3_BUCKET }}
+          DATABRICKS_HOST:         ${{ secrets.DATABRICKS_HOST }}
+          DATABRICKS_TOKEN:        ${{ secrets.DATABRICKS_TOKEN }}
+          DATABRICKS_HTTP_PATH:    ${{ secrets.DATABRICKS_HTTP_PATH }}
+          DATABRICKS_CATALOG:      ${{ secrets.DATABRICKS_CATALOG }}
+        run: python ingestion/load_desk_limits.py
