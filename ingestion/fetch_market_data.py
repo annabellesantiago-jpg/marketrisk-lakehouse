@@ -23,7 +23,7 @@ import sys
 import os
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from ingestion.config import ALL_TICKERS, PRICE_HISTORY_DAYS, S3_BUCKET, RUN_DATE, RUN_YEAR, RUN_MONTH, RUN_DAY
+from ingestion.config import ALL_TICKERS, PRICE_HISTORY_DAYS, S3_BUCKET, RUN_DATE, RUN_YEAR, RUN_MONTH, RUN_DAY, setup_logging
 from ingestion.s3_utils import get_client, verify_bucket, upload_df
 
 logger = logging.getLogger(__name__)
@@ -135,4 +135,5 @@ def main():
 
 
 if __name__ == "__main__":
+    setup_logging()
     main()

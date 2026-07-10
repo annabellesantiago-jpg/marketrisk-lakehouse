@@ -15,8 +15,9 @@ import logging
 import boto3
 import pandas as pd
 from botocore.exceptions import ClientError, NoCredentialsError
+from config import setup_logging
 
-
+setup_logging()
 logger = logging.getLogger(__name__)
 
 

@@ -15,6 +15,7 @@ This file contains only:
 """
 
 import os
+import logging
 from datetime import datetime, timezone
 from dotenv import load_dotenv
 
@@ -115,18 +116,6 @@ TRADER_IDS = {
     "Credit Desk": ["T-CR-001", "T-CR-002", "T-CR-003", "T-CR-004", "T-CR-005"],
 }
 
-# ── Desk risk limits (USD) ────────────────────────────────────────────────
-# Risk limits approved by the board risk committee.
-# Used by: fetch_reference_data.py (generates desk_limits.csv)
-#          Gold model exposure_monitor reads from bronze.desk_limits
-# Change here if limits are revised — only one place to update.
-DESK_LIMITS = {
-    "FX Desk":     10_000_000,   # USD 10M
-    "Equity Desk": 15_000_000,   # USD 15M
-    "Rates Desk":  20_000_000,   # USD 20M
-    "Credit Desk":  8_000_000,   # USD  8M
-}
-
 # ── Databricks ────────────────────────────────────────────────────────────
 # Connection details read from environment — never hardcoded.
 # dbt connection lives in ~/.dbt/profiles.yml, not here.
@@ -136,3 +125,11 @@ DATABRICKS_TOKEN   = os.getenv("DATABRICKS_TOKEN", "")
 
 # ── API keys ──────────────────────────────────────────────────────────────
 ALPHA_VANTAGE_KEY = os.getenv("ALPHA_VANTAGE_KEY", "")
+
+
+def setup_logging():
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s  %(levelname)-8s  %(name)s  %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+    )
