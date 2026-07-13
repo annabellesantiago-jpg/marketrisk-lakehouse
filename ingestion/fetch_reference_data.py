@@ -1,7 +1,8 @@
 """
 fetch_reference_data.py
 ─────────────────────────────────────────────────────────────────────────────
-Generates reference data files: desk risk limits and FX conversion rates.
+Generates reference data files: FX conversion rates.
+Desk limits are being handled separately in load_desk_limits.py
 
 FX rates are read from the price CSV files already written by
 fetch_market_data.py — the latest close price for each FX pair IS the
@@ -13,17 +14,14 @@ Run order:
   1. python ingestion/fetch_market_data.py    ← downloads FX price history
   2. python ingestion/fetch_reference_data.py ← reads latest close as spot rate
   3. python ingestion/generate_positions.py
-  4. python ingestion/upload_to_s3.py
 
 In a real bank:
-  - Desk limits come from the risk governance system (board-approved annually)
   - FX rates come from a real-time feed (Bloomberg BFIX, WM/Reuters 4pm fix)
 ─────────────────────────────────────────────────────────────────────────────
 """
 
 import logging
 import pandas as pd
-import pathlib
 from datetime import datetime, date, timezone
 import sys
 import os
@@ -78,31 +76,6 @@ def get_live_fx_rates(client) -> dict:
     return rates
 
 
-def generate_desk_limits() -> pd.DataFrame:
-    """
-    Generate the desk_limits reference file from config.DESK_LIMITS.
-
-    effective_date: start of current calendar year — annual board review.
-    review_date:    start of next calendar year — next scheduled review.
-    """
-    today          = date.today()
-    effective_date = date(today.year, 1, 1).strftime("%Y-%m-%d")
-    review_date    = date(today.year + 1, 1, 1).strftime("%Y-%m-%d")
-
-    rows = [
-        {
-            "desk":           desk,
-            "limit_usd":      limit,
-            "limit_currency": "USD",
-            "effective_date": effective_date,
-            "review_date":    review_date,
-            "generated_at":  datetime.now(timezone.utc).isoformat(),
-        }
-        for desk, limit in DESK_LIMITS.items()
-    ]
-    return pd.DataFrame(rows)
-
-
 def generate_fx_rates(rates: dict) -> pd.DataFrame:
     """
     Convert the live FX rates dict into a DataFrame for CSV output.
@@ -136,34 +109,23 @@ def main():
     client = get_client()
     verify_bucket(client, S3_BUCKET)
 
-    # ── Desk limits that is versioned and maintained usually by Head of Risk ──────────────────────────
-    limits_path = pathlib.Path(__file__).parent.parent / "data" / "raw" / "reference" / "desk_limits.csv"
-    limits = pd.read_csv(limits_path)
-    key    = f"raw/reference/desk_limits.csv"
-    upload_df(client, limits, S3_BUCKET, key)
-    logger.info(
-        "Desk limits (%d rows):\n%s",
-        len(limits),
-        limits[["desk", "limit_usd", "effective_date", "review_date"]].to_string(index=False)
-    )
     # ── FX rates — live from price files ─────────────────────────────────
     logger.info("Reading latest FX close prices from S3....")
 
     try:
         live_rates = get_live_fx_rates(client)
-    except FileNotFoundError as e:
+    except (FileNotFoundError, ValueError) as e:
         logger.error("\nERROR: %s", e)
         sys.exit(1)
 
     fx      = generate_fx_rates(live_rates)
-    key    = f"raw/reference/fx_rates.csv"
+    key    = "raw/reference/fx_rates.csv"
     upload_df(client, fx, S3_BUCKET, key)
     logger.info(
         "FX rates (%d rows):\n%s",
         len(fx),
         fx[["currency", "rate_vs_usd", "as_of_date"]].to_string(index=False)
     )
-
 
     logger.info("Reference data generation complete.")
 

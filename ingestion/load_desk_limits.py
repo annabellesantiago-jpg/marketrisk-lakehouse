@@ -12,6 +12,9 @@ Trigger flow:
   2. PR raised → reviewed and approved by CRO → merged to main
   3. GitHub Actions detects file change → runs this script automatically
   4. Script uploads to S3 → reloads Bronze
+
+In a real bank:
+  - Desk limits come from the risk governance system (board-approved annually)
 ─────────────────────────────────────────────────────────────────────────────
 """
 
