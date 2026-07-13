@@ -2,6 +2,7 @@
 .env
 
 # -- ignore python virtual environment --
+.venv/
 venv/
 __pycache__/
 *.pyc
@@ -35,3 +36,4 @@ monitoring/prometheus/data
 Thumbs.db
 Thumbs.db:encryptable
 desktop.ini
+AGENTS.md
