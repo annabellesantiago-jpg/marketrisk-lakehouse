@@ -22,14 +22,14 @@ import logging
 import pathlib
 import pandas as pd
 from databricks import sql as databricks_sql
-from ingestion.config import (
+from config import (
     S3_BUCKET,
     DATABRICKS_HOST,
     DATABRICKS_TOKEN,
     DATABRICKS_HTTP_PATH,
     setup_logging,
 )
-from ingestion.s3_utils import get_client, verify_bucket, upload_df
+from s3_utils import get_client, verify_bucket, upload_df
 
 logger = logging.getLogger(__name__)
 
@@ -40,10 +40,24 @@ TRUNCATE_SQL = "TRUNCATE TABLE market_risk_dev.bronze.desk_limits"
 
 COPY_INTO_SQL = f"""
 COPY INTO market_risk_dev.bronze.desk_limits
-FROM 's3://{S3_BUCKET}/raw/reference/'
+FROM (
+  SELECT
+    desk,
+    CAST(limit_usd        AS DOUBLE)  AS limit_usd,
+    limit_currency,
+    CAST(effective_date   AS DATE)    AS effective_date,
+    CAST(review_date      AS DATE)    AS review_date,
+    approved_by,
+    uploaded_by,
+    CAST(approved_date    AS DATE)    AS approved_date,
+    comments,
+    _metadata.file_path               AS _source_file,
+    current_timestamp()               AS _ingested_at
+  FROM 's3://{S3_BUCKET}/raw/reference/'
+)
 FILEFORMAT = CSV
-FORMAT_OPTIONS ('header' = 'true', 'inferSchema' = 'true')
 PATTERN = 'desk_limits.csv'
+FORMAT_OPTIONS ('header' = 'true', 'inferSchema' = 'false')
 """
 
 

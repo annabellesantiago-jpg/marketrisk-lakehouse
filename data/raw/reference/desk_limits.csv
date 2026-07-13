@@ -1,5 +1,5 @@
 desk,limit_usd,limit_currency,effective_date,review_date,approved_by,uploaded_by,approved_date,comments
-FX Desk,2500000000,USD,1/1/2026,1/1/2027,TRM,Annabelle Santiago,7/10/2026,updated limit values
-Equity Desk,2000000000,USD,1/1/2026,1/1/2027,TRM,Annabelle Santiago,7/10/2026,updated limit values
-Rates Desk,3500000000,USD,1/1/2026,1/1/2027,TRM,Annabelle Santiago,7/10/2026,updated limit values
-Credit Desk,2750000000,USD,1/1/2026,1/1/2027,TRM,Annabelle Santiago,7/10/2026,updated limit values
+FX Desk,2500000000,USD,2026-01-01,2027-01-01,TRM,Annabelle Santiago,2026-07-10,updated limit values
+Equity Desk,2000000000,USD,2026-01-01,2027-01-01,TRM,Annabelle Santiago,2026-07-10,updated limit values
+Rates Desk,3500000000,USD,2026-01-01,2027-01-01,TRM,Annabelle Santiago,2026-07-10,updated limit values
+Credit Desk,2750000000,USD,2026-01-01,2027-01-01,TRM,Annabelle Santiago,2026-07-10,updated limit values

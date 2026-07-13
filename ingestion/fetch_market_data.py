@@ -22,11 +22,17 @@ from datetime import datetime, timedelta, timezone
 import sys
 import os
 
+from botocore.exceptions import ClientError
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from ingestion.config import ALL_TICKERS, PRICE_HISTORY_DAYS, S3_BUCKET, RUN_DATE, RUN_YEAR, RUN_MONTH, RUN_DAY, setup_logging
 from ingestion.s3_utils import get_client, verify_bucket, upload_df
 
 logger = logging.getLogger(__name__)
+
+
+class MarketDataFetchError(RuntimeError):
+    """Raised when a required market data file cannot be fetched."""
 
 
 def ticker_to_filename(ticker: str) -> str:
@@ -58,27 +64,42 @@ def fetch_ticker(ticker: str, days: int) -> pd.DataFrame:
     start_date = end_date - timedelta(days=days)
 
     data = pd.DataFrame()
+    last_error = None
 
-    for attempt in range(1, 3):        
+    for attempt in range(1, 4):
         logger.info("Fetching %s from %s to %s", ticker, start_date.strftime("%Y-%m-%d"), end_date.strftime("%Y-%m-%d"))
-        data = yf.download(
-            ticker,
-            start=start_date,
-            end=end_date,
-            progress=False,
-            auto_adjust=True,
-        )
+        try:
+            data = yf.download(
+                ticker,
+                start=start_date,
+                end=end_date,
+                progress=False,
+                auto_adjust=True,
+            )
+        except Exception as exc:
+            last_error = exc
+            data = pd.DataFrame()
 
         if not data.empty:
             break
-        
-        wait = 5 * attempt #5s, 10s, 15s
-        logger.warning("No data for %s - waiting %d before retry", ticker, wait)
-        time.sleep(wait)
+
+        if attempt < 3:
+            wait = 5 * attempt # 5s, 10s
+            logger.warning(
+                "No data for %s on attempt %d/3%s - waiting %d seconds before retry",
+                ticker,
+                attempt,
+                f" ({last_error})" if last_error else "",
+                wait,
+            )
+            time.sleep(wait)
 
     if data.empty:
         logger.warning("No data returned for %s — check if ticker is still valid", ticker)
-        return pd.DataFrame()
+        raise MarketDataFetchError(
+            f"No market data returned for required ticker {ticker} after 3 attempts"
+            + (f": {last_error}" if last_error else "")
+        )
 
     # Flatten MultiIndex columns produced by yfinance for single tickers
     data.reset_index(inplace=True)
@@ -108,6 +129,17 @@ def fetch_ticker(ticker: str, days: int) -> pd.DataFrame:
     return data
 
 
+def file_exists_in_s3(client, bucket: str, key: str) -> bool:
+    try:
+        client.head_object(Bucket=bucket, Key=key)
+        return True
+    except ClientError as exc:
+        code = exc.response.get("Error", {}).get("Code")
+        if code in {"404", "NoSuchKey", "NotFound"}:
+            return False
+        raise
+
+
 def main():
     logger.info("\nFetching %d tickers (%d calendar days of history) for run date %s...\n", 
                 len(ALL_TICKERS), PRICE_HISTORY_DAYS, RUN_DATE)
@@ -119,17 +151,24 @@ def main():
     skipped = 0
 
     for ticker in ALL_TICKERS:
-        df = fetch_ticker(ticker, PRICE_HISTORY_DAYS)
+        filename = ticker_to_filename(ticker)
+        key = f"raw/prices/year={RUN_YEAR}/month={RUN_MONTH}/day={RUN_DAY}/{filename}.csv"
 
-        if df.empty:
+        if file_exists_in_s3(client, S3_BUCKET, key):
+            logger.info("Skipping %s — already exists in S3", ticker)
             skipped += 1
             continue
 
-        filename    = ticker_to_filename(ticker)
-        key = f"raw/prices/year={RUN_YEAR}/month={RUN_MONTH}/day={RUN_DAY}/{filename}.csv"
+        try:
+            df = fetch_ticker(ticker, PRICE_HISTORY_DAYS)
+        except MarketDataFetchError as e:
+            logger.warning("Skipping %s - %s", ticker, e)
+            skipped += 1
+            continue
+
         upload_df(client, df, S3_BUCKET, key)
         saved += 1
-        time.sleep(3) # wait 1s to fetch the next ticker
+        time.sleep(10) # wait 10s to fetch the next ticker
 
     logger.info("\nFetch complete - %d tickers uploaded, %d skipped.", saved, skipped)
 
