@@ -65,6 +65,17 @@ desk_exposure AS (
   GROUP BY desk
 ),
 
+-- Step 1.5: Deduplicate: Always use the most recently approved limit per desk.
+-- Defensive dedup guards against multiple rows in bronze.desk_limits
+-- from governance reloads or test runs.
+
+latest_limits AS (
+  SELECT desk, limit_usd
+  FROM   {{ source('bronze', 'desk_limits') }}
+  QUALIFY ROW_NUMBER() OVER (PARTITION BY desk ORDER BY approved_date DESC, _ingested_at DESC) = 1
+),
+
+
 -- Step 2: Join desk limits from Bronze reference table.
 --         INNER JOIN because every desk must have a limit defined.
 --         A missing limit is a data quality problem that should surface
@@ -83,7 +94,7 @@ exposure_with_limits AS (
       4
     )                                                     AS utilisation_pct
   FROM desk_exposure                            de
-  INNER JOIN {{ source('bronze', 'desk_limits') }} dl
+  INNER JOIN latest_limits dl
     ON UPPER(de.desk) = UPPER(dl.desk)
 ),
 
