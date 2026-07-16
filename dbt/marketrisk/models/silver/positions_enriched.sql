@@ -33,6 +33,15 @@ fx_with_usd AS (
   FROM {{ source('bronze', 'fx_rates') }}
 ),
 
+-- Step 1.5: Perform Deduplication: Bronze holds all historical position loads.
+-- Positions is a point-in-time snapshot — keep only the latest load per trade_id.
+positions_deduped AS (
+  SELECT *
+  FROM   {{ source('bronze', 'positions') }}  
+  WHERE  trade_id IS NOT NULL
+  QUALIFY ROW_NUMBER() OVER (PARTITION BY trade_id ORDER BY generated_at DESC) = 1
+),
+
 -- Step 2: Find the most recent price date available for each ticker.
 --         We use MAX(price_date) rather than CURRENT_DATE() because
 --         the latest data may be 1-2 days old due to market close timing.
@@ -84,7 +93,7 @@ positions_with_direction AS (
       WHEN 'SHORT' THEN -1
       ELSE 0
     END                                   AS direction_multiplier
-  FROM {{ source('bronze', 'positions') }}
+  FROM positions_deduped
   WHERE trade_id IS NOT NULL
 ),
 

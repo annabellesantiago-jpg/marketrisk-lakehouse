@@ -210,7 +210,7 @@ def generate_book() -> pd.DataFrame:
     today   = date.today()
     rows    = []
     counter = 1
-
+    run_timestamp = pd.Timestamp.now(timezone.utc).isoformat()
     for desk, cfg in DESK_CONFIG.items():
         for _ in range(cfg["n_positions"]):
             instrument    = random.choice(cfg["instruments"])
@@ -237,7 +237,7 @@ def generate_book() -> pd.DataFrame:
                 "currency":        instrument["currency"],
                 "trade_date":      trade_date.strftime("%Y-%m-%d"),
                 "maturity_date":   maturity_date.strftime("%Y-%m-%d"),
-                "generated_at":   pd.Timestamp.now(timezone.utc).isoformat(),
+                "generated_at":    run_timestamp,
             })
             counter += 1
 
