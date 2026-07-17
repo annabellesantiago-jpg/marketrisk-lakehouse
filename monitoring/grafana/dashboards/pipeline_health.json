@@ -1,0 +1,474 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "links": [],
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 100,
+      "title": "Overview",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 1 }
+            ]
+          },
+          "mappings": [
+            { "options": { "0": { "text": "Healthy", "color": "green" } }, "type": "value" },
+            { "options": { "from": 1, "to": 999, "result": { "text": "Errors!", "color": "red" } }, "type": "range" }
+          ]
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 1 },
+      "id": 1,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "title": "DAG Import Errors",
+      "type": "stat",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus" },
+          "expr": "airflow_dag_processing_import_errors",
+          "legendFormat": "Import Errors"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 1 },
+      "id": 2,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "title": "DAGs Loaded",
+      "type": "stat",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus" },
+          "expr": "airflow_dagbag_size",
+          "legendFormat": "DAGs"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 1 },
+      "id": 3,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "title": "Scheduler Heartbeats",
+      "type": "stat",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus" },
+          "expr": "airflow_scheduler_heartbeat",
+          "legendFormat": "Heartbeats"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 1 },
+      "id": 4,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "title": "Executor Open Slots",
+      "type": "stat",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus" },
+          "expr": "airflow_executor_open_slots",
+          "legendFormat": "Open Slots"
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 5 },
+      "id": 101,
+      "title": "Scheduler Health",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisLabel": "seconds",
+            "drawStyle": "line",
+            "fillOpacity": 15,
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "showPoints": "auto",
+            "spanNulls": false
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 6 },
+      "id": 5,
+      "options": {
+        "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "title": "Scheduler Loop Duration",
+      "type": "timeseries",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus" },
+          "expr": "rate(airflow_scheduler_scheduler_loop_duration_sum[5m]) / rate(airflow_scheduler_scheduler_loop_duration_count[5m])",
+          "legendFormat": "Avg Loop Duration"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisLabel": "seconds",
+            "drawStyle": "line",
+            "fillOpacity": 15,
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "showPoints": "auto",
+            "spanNulls": false
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 6 },
+      "id": 6,
+      "options": {
+        "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "title": "Critical Section Duration",
+      "type": "timeseries",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus" },
+          "expr": "rate(airflow_scheduler_critical_section_duration_sum[5m]) / rate(airflow_scheduler_critical_section_duration_count[5m])",
+          "legendFormat": "Avg Critical Section"
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 14 },
+      "id": 102,
+      "title": "Executor & Pool",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisLabel": "tasks",
+            "drawStyle": "line",
+            "fillOpacity": 30,
+            "lineInterpolation": "stepAfter",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "mode": "normal" }
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "Running" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "green", "mode": "fixed" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Queued" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "yellow", "mode": "fixed" } }]
+          }
+        ]
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 15 },
+      "id": 7,
+      "options": {
+        "legend": { "calcs": ["lastNotNull"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "title": "Executor — Running vs Queued Tasks",
+      "type": "timeseries",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus" },
+          "expr": "airflow_executor_running_tasks",
+          "legendFormat": "Running"
+        },
+        {
+          "datasource": { "type": "prometheus" },
+          "expr": "airflow_executor_queued_tasks",
+          "legendFormat": "Queued"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisLabel": "slots",
+            "drawStyle": "line",
+            "fillOpacity": 15,
+            "lineInterpolation": "stepAfter",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "showPoints": "never",
+            "spanNulls": false
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "Running" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "green", "mode": "fixed" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Queued" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "yellow", "mode": "fixed" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Deferred" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "blue", "mode": "fixed" } }]
+          }
+        ]
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 15 },
+      "id": 8,
+      "options": {
+        "legend": { "calcs": ["lastNotNull"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "title": "Pool Slots — default_pool",
+      "type": "timeseries",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus" },
+          "expr": "airflow_pool_running_slots_default_pool",
+          "legendFormat": "Running"
+        },
+        {
+          "datasource": { "type": "prometheus" },
+          "expr": "airflow_pool_queued_slots_default_pool",
+          "legendFormat": "Queued"
+        },
+        {
+          "datasource": { "type": "prometheus" },
+          "expr": "airflow_pool_deferred_slots_default_pool",
+          "legendFormat": "Deferred"
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 23 },
+      "id": 103,
+      "title": "DAG Processing",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisLabel": "seconds",
+            "drawStyle": "line",
+            "fillOpacity": 15,
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "showPoints": "auto",
+            "spanNulls": false
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 24 },
+      "id": 9,
+      "options": {
+        "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "title": "DAG Parse Duration — marketrisk_pipeline",
+      "type": "timeseries",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus" },
+          "expr": "rate(airflow_dag_processing_last_duration_marketrisk_pipeline_sum[5m]) / rate(airflow_dag_processing_last_duration_marketrisk_pipeline_count[5m])",
+          "legendFormat": "Avg Parse Time"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 60 },
+              { "color": "red", "value": 120 }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 6, "x": 12, "y": 24 },
+      "id": 10,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "title": "Last Parse — Seconds Ago",
+      "type": "stat",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus" },
+          "expr": "airflow_dag_processing_last_run_seconds_ago_marketrisk_pipeline",
+          "legendFormat": "Seconds Ago"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 6, "x": 18, "y": 24 },
+      "id": 11,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "title": "Total Parse Cycles",
+      "type": "stat",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus" },
+          "expr": "airflow_dag_processing_processes",
+          "legendFormat": "Cycles"
+        }
+      ]
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": ["airflow", "marketrisk", "pipeline"],
+  "templating": { "list": [] },
+  "time": { "from": "now-1h", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "MarketRisk Pipeline Health",
+  "uid": "marketrisk-pipeline-health",
+  "version": 1
+}
