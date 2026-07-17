@@ -20,14 +20,11 @@ AIRFLOW_PASSWORD = os.getenv("AIRFLOW_PASSWORD", "admin")
 
 DATABRICKS_HOST = os.getenv("DATABRICKS_HOST", "")  # e.g. adb-xxxx.azuredatabricks.net
 DATABRICKS_TOKEN = os.getenv("DATABRICKS_TOKEN", "")
-DATABRICK_WAREHOUSE_ID = os.getenv("DATABRICK_WAREHOUSE_ID", "")
-
-MINIO_ENDPOINT = os.getenv("MINIO_ENDPOINT", "http://minio:9000")
-MINIO_USER = os.getenv("MINIO_ROOT_USER", "minioadmin")
-MINIO_PASS = os.getenv("MINIO_ROOT_PASSWORD", "minioadmin")
-MINIO_BUCKET = os.getenv("MINIO_BUCKET", "marketrisk-raw")
+DATABRICKS_WAREHOUSE_ID = os.getenv("DATABRICKS_WAREHOUSE_ID", "")
+DATABRICKS_CATALOG = os.environ["DATABRICKS_CATALOG"]
 
 DAG_ID = "marketrisk_pipeline"  # Airflow DAG to monitor/control
+VALID_DESKS = {"FX DESK", "EQUITY DESK", "RATES DESK", "CREDIT DESK"}
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -87,7 +84,7 @@ def get_task_statuses(run_id: str) -> str:
     Use get_pipeline_status first to get a valid run_id.
     """
     try:
-        data = airflow_get(f"dags/{DAG_ID}/dagRuns/{run_id}/taskInstances")
+        data = airflow_api(f"dags/{DAG_ID}/dagRuns/{run_id}/taskInstances")
         tasks = data.get("task_instances", [])
         result = [
             {
@@ -101,25 +98,29 @@ def get_task_statuses(run_id: str) -> str:
         return json.dumps(result, indent=2)
     except Exception as e:
         return f"Error fetching task statuses: {e}"
-    
+
+# All queries use {DATABRICKS_CATALOG} catalog — matches dbt, Airflow COPY INTO, and load_desk_limits.py.
+# If multi-environment support is needed, make this env-driven via DATABRICKS_CATALOG.
 @mcp.tool()
 def get_var_report(desk: str = "ALL") -> str:
     """
     Get the latest Value at Risk (VaR) figures from the Gold Delta table.
     Optionally filter by desk name. Returns VaR at 95th and 99th percentile.
     """
-    sql = """
+    sql = f"""
         With latest_date AS (
             SELECT MAX(calculation_date) AS max_date
-            FROM gold.gold_var_daily
+            FROM {DATABRICKS_CATALOG}.gold.var_daily
         )
-        SELECT desk, asset_class, var_95, var_99, calculation_date
-        FROM gold.gold_var_daily g, latest_date l
+        SELECT desk, asset_class, var_95_usd, var_99_usd, calculation_date
+        FROM {DATABRICKS_CATALOG}.gold.var_daily g, latest_date l
         WHERE calculation_date = l.max_date
     """
     if desk != "ALL":
+        if desk.upper() not in VALID_DESKS:
+            return f"Invalid desk: {desk}. Valid desks: {', '.join(sorted(VALID_DESKS))}"
         sql += f" AND UPPER(desk) = UPPER('{desk}')"
-    sql += " ORDER BY var_99 DESC"
+    sql += " ORDER BY var_99_usd DESC"
  
     try:
         return json.dumps(databricks_sql(sql), indent=2)
@@ -132,13 +133,13 @@ def check_limit_breaches() -> str:
     Check for active limit breaches in the exposure monitor Gold table.
     Returns all desks/counterparties where utilisation exceeds 100% of their limit.
     """
-    sql = """
-        SELECT desk, counterparty, exposure_usd, limit_usd,
-               ROUND(utilisation_pct, 2) AS utilisation_pct,
-               breach_flag, breach_since_date
-        FROM gold.gold_exposure_monitor
+    sql = f"""
+        SELECT desk, gross_exposure_usd, limit_usd,
+               ROUND(utilisation_pct, 4) AS utilisation_pct,
+               limit_status, breach_flag
+        FROM  {DATABRICKS_CATALOG}.gold.exposure_monitor
         WHERE breach_flag = true
-          AND as_of_date = (SELECT MAX(as_of_date) FROM gold.gold_exposure_monitor)
+          AND as_of_date = (SELECT MAX(as_of_date) FROM {DATABRICKS_CATALOG}.gold.exposure_monitor)
         ORDER BY utilisation_pct DESC
     """
     try:
@@ -153,18 +154,20 @@ def get_pnl_summary(desk: str = "ALL") -> str:
     Get today's PnL attribution breakdown — actual vs hypothetical PnL by desk.
     Large unexplained PnL (actual minus hypothetical) can signal a risk issue.
     """
-    sql = """
+    sql = f"""
         SELECT desk,
-               ROUND(actual_pnl, 2)        AS actual_pnl,
-               ROUND(hypothetical_pnl, 2)  AS hypothetical_pnl,
-               ROUND(actual_pnl - hypothetical_pnl, 2) AS unexplained_pnl,
-               pnl_date
-        FROM gold.gold_pnl_attribution
-        WHERE pnl_date = (SELECT MAX(pnl_date) FROM gold.gold_pnl_attribution)
+            ROUND(actual_pnl_usd, 2)        AS actual_pnl_usd,
+            ROUND(hypothetical_pnl_usd, 2)  AS hypothetical_pnl_usd,
+            ROUND(actual_pnl_usd - hypothetical_pnl_usd, 2) AS unexplained_pnl_usd,
+            pnl_date
+        FROM {DATABRICKS_CATALOG}.gold.pnl_attribution
+        WHERE pnl_date = (SELECT MAX(pnl_date) FROM {DATABRICKS_CATALOG}.gold.pnl_attribution)
     """
     if desk != "ALL":
+        if desk.upper() not in VALID_DESKS:
+            return f"Invalid desk: {desk}. Valid desks: {', '.join(sorted(VALID_DESKS))}"
         sql += f" AND UPPER(desk) = UPPER('{desk}')"
-    sql += " ORDER BY ABS(actual_pnl - hypothetical_pnl) DESC"
+    sql += " ORDER BY ABS(actual_pnl_usd - hypothetical_pnl_usd) DESC"
  
     try:
         return json.dumps(databricks_sql(sql), indent=2)
@@ -178,14 +181,16 @@ def get_table_health() -> str:
     Use this to detect empty tables, failed loads, or unexpected data drops.
     """
     tables = [
-        "bronze.bronze_market_prices",
-        "bronze.bronze_positions",
-        "bronze.bronze_reference",
-        "silver.silver_prices_cleaned",
-        "silver.silver_positions_enriched",
-        "gold.gold_var_daily",
-        "gold.gold_pnl_attribution",
-        "gold.gold_exposure_monitor",
+        f"{DATABRICKS_CATALOG}.bronze.market_prices",
+        f"{DATABRICKS_CATALOG}.bronze.positions",
+        f"{DATABRICKS_CATALOG}.bronze.fx_rates",
+        f"{DATABRICKS_CATALOG}.bronze.desk_limits",
+        f"{DATABRICKS_CATALOG}.silver.prices_cleaned",
+        f"{DATABRICKS_CATALOG}.silver.positions_enriched",
+        f"{DATABRICKS_CATALOG}.gold.var_daily",
+        f"{DATABRICKS_CATALOG}.gold.pnl_attribution",
+        f"{DATABRICKS_CATALOG}.gold.exposure_monitor",
+        f"{DATABRICKS_CATALOG}.gold.risk_summary",
     ]
     results = {}
     for table in tables:
@@ -230,33 +235,31 @@ def rerun_failed_tasks(run_id: str) -> str:
         return f"Error clearing tasks: {e}"
     
 @mcp.tool()
-def list_minio_files(prefix: str = "") -> str:
+def list_s3_files(prefix: str = "") -> str:
     """
-    List raw files in the MinIO landing zone bucket.
-    Use prefix to filter — e.g. prefix='prices/' shows only price files.
+    List raw files in the S3 landing zone bucket.
+    Use prefix to filter — e.g. prefix='raw/prices/' shows only price files.
     Useful for verifying ingestion actually wrote files before Databricks runs.
     """
     try:
-        s3 = boto3.client(
-            "s3",
-            endpoint_url=MINIO_ENDPOINT,
-            aws_access_key_id=MINIO_USER,
-            aws_secret_access_key=MINIO_PASS,
+        s3 = boto3.client("s3",
+            region_name=os.getenv("AWS_REGION", "ap-southeast-2"),
         )
-        response = s3.list_objects_v2(Bucket=MINIO_BUCKET, Prefix=prefix)
+        bucket = os.getenv("S3_BUCKET", "")
+        response = s3.list_objects_v2(Bucket=bucket, Prefix=prefix)
         files = response.get("Contents", [])
         file_list = [
             {
                 "filename": f["Key"],
                 "size_kb": round(f["Size"] / 1024, 1),
                 "last_modified": f["LastModified"].strftime("%Y-%m-%d %H:%M:%S"),
-             } for f in files]
-        
+            } for f in files]
+
         if not file_list:
-            return f"No files found in bucket '{MINIO_BUCKET}' with prefix '{prefix}'."
+            return f"No files found in bucket '{bucket}' with prefix '{prefix}'."
         return json.dumps(file_list, indent=2)
     except Exception as e:
-        return f"Could not connect to MinIO: {e}"
+        return f"Could not connect to S3: {e}"
     
 # ── Entry point ───────────────────────────────────────────────────────────────
 

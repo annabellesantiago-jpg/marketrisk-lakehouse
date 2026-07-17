@@ -1,7 +1,7 @@
 # version:  "3.8"
 
 x-airflow-common: &airflow-common
-  build: 
+  build:
     context: .
     dockerfile: airflow/Dockerfile
   environment:
@@ -16,6 +16,7 @@ x-airflow-common: &airflow-common
     AIRFLOW__METRICS__STATSD_ON: 'true'
     AIRFLOW__METRICS__STATSD_HOST: statsd-exporter
     AIRFLOW__METRICS__STATSD_PORT: '9125'
+    AIRFLOW_CONN_DATABRICKS_DEFAULT: databricks://token:${DATABRICKS_TOKEN}@${DATABRICKS_HOST}?http_path=${DATABRICKS_HTTP_PATH}
     DATABRICKS_HOST: ${DATABRICKS_HOST}
     DATABRICKS_TOKEN: ${DATABRICKS_TOKEN}
     DATABRICKS_HTTP_PATH: ${DATABRICKS_HTTP_PATH}
@@ -34,7 +35,7 @@ x-airflow-common: &airflow-common
     - ./ingestion:/opt/airflow/ingestion
   depends_on:
     postgres:
-      condition: service_healthy                
+      condition: service_healthy
 
 services:
 
@@ -62,7 +63,7 @@ services:
   airflow-webserver:
     <<: *airflow-common
     container_name: marketrisk-airflow-webserver
-    command: webserver    
+    command: webserver
     ports:
       - "8080:8080"
     restart: unless-stopped
@@ -71,7 +72,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
-  
+
   airflow-scheduler:
     <<: *airflow-common
     container_name: marketrisk-airflow-scheduler
@@ -92,15 +93,18 @@ services:
       - "8888:8888"
     environment:
       AIRFLOW_URL: http://airflow-webserver:8080
-      AIRFLOW_USERNAME: ${AIRFLOW_USER:-admin}
+      AIRFLOW_USER: ${AIRFLOW_USER:-admin}
       AIRFLOW_PASSWORD: ${AIRFLOW_PASS:-admin}
       DATABRICKS_HOST: ${DATABRICKS_HOST:-}
       DATABRICKS_TOKEN: ${DATABRICKS_TOKEN:-}
       DATABRICKS_WAREHOUSE_ID: ${DATABRICKS_WAREHOUSE_ID:-}
-      MINIO_ENDPOINT: http://marketrisk-minio:9000
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
-      MINIO_BUCKET: ${MINIO_BUCKET}
+      # Used by dbt (via profiles.yml), Airflow (via {{ var.value.databricks_catalog }}),
+      # MCP server (os.environ), and load_desk_limits.py
+      DATABRICKS_CATALOG: ${DATABRICKS_CATALOG}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_REGION: ${AWS_REGION}
+      S3_BUCKET: ${S3_BUCKET}
     depends_on:
       - airflow-webserver
     restart: unless-stopped
@@ -122,9 +126,9 @@ services:
       - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
       - prometheus_data:/prometheus
     restart: unless-stopped
-    depends_on: 
+    depends_on:
       - statsd-exporter
-  
+
   grafana:
     image: grafana/grafana:10.4.0
     container_name: marketrisk-grafana
