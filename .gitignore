@@ -23,6 +23,7 @@ airflow/airflow.cfg
 airflow/logs/
 airflow/webserver_config.py
 airflow/dags/__pycache__/
+airflow/dbt_profiles/.user.yml
 
 # -- ignore Docker volumes and images --
 monitoring/grafana/data
