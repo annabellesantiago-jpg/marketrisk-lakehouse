@@ -14,7 +14,7 @@ RUN apt-get update \
 USER airflow
 
 # Copy requirements file — better than hardcoding in RUN
-COPY requirements.txt /requirements.txt
+COPY airflow/requirements.txt /requirements.txt
 
 RUN pip install --no-cache-dir \
     -r /requirements.txt 

@@ -1,1 +1,5 @@
 dbt-databricks==1.7.3
+apache-airflow-providers-databricks==6.8.0
+yfinance==0.2.54
+boto3==1.35.99
+python-dotenv==1.0.1
