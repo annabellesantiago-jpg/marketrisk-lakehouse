@@ -48,6 +48,7 @@ services:
       POSTGRES_DB: airflow
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./postgres/init-superset-db.sh:/docker-entrypoint-initdb.d/init-superset-db.sh
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "airflow"]
       interval: 10s
@@ -107,6 +108,72 @@ services:
       S3_BUCKET: ${S3_BUCKET}
     depends_on:
       - airflow-webserver
+    restart: unless-stopped
+  
+  redis:
+    image: redis:7-alpine
+    container_name: marketrisk-redis
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  superset-init:
+    build:
+      context: ./superset
+      dockerfile: Dockerfile
+    container_name: marketrisk-superset-init
+    command: bash /app/superset-init.sh
+    environment:
+      SUPERSET_CONFIG_PATH: /app/superset_config.py
+      SUPERSET_DB_USER: superset
+      SUPERSET_DB_PASSWORD: superset
+      SUPERSET_DB_HOST: postgres
+      SUPERSET_DB_PORT: "5432"
+      SUPERSET_DB_NAME: superset
+      SUPERSET_SECRET_KEY: ${SUPERSET_SECRET_KEY}
+      SUPERSET_ADMIN_USER: ${SUPERSET_ADMIN_USER:-admin}
+      SUPERSET_ADMIN_PASSWORD: ${SUPERSET_ADMIN_PASSWORD:-admin}
+      SUPERSET_ADMIN_EMAIL: ${SUPERSET_ADMIN_EMAIL:-admin@marketrisk.local}
+      REDIS_URL: redis://redis:6379/0
+    volumes:
+      - ./superset/superset_config.py:/app/superset_config.py
+      - ./superset/superset-init.sh:/app/superset-init.sh
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: on-failure
+
+  superset:
+    build:
+      context: ./superset
+      dockerfile: Dockerfile
+    container_name: marketrisk-superset
+    command: superset run -h 0.0.0.0 -p 8088 --with-threads
+    ports:
+      - "8088:8088"
+    environment:
+      SUPERSET_CONFIG_PATH: /app/superset_config.py
+      SUPERSET_DB_USER: superset
+      SUPERSET_DB_PASSWORD: superset
+      SUPERSET_DB_HOST: postgres
+      SUPERSET_DB_PORT: "5432"
+      SUPERSET_DB_NAME: superset
+      SUPERSET_SECRET_KEY: ${SUPERSET_SECRET_KEY}
+      REDIS_URL: redis://redis:6379/0
+    volumes:
+      - ./superset/superset_config.py:/app/superset_config.py
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     restart: unless-stopped
 
   statsd-exporter:
