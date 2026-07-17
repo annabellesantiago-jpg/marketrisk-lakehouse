@@ -83,7 +83,7 @@ with DAG(
         databricks_conn_id='databricks_default',
         http_path=os.environ.get('DATABRICKS_HTTP_PATH'),
         sql="""
-            COPY INTO market_risk_dev.bronze.market_prices
+            COPY INTO {{ var.value.databricks_catalog }}.bronze.market_prices
             FROM (
             SELECT
                 CAST(Date       AS DATE)      AS Date,
@@ -111,7 +111,7 @@ with DAG(
         databricks_conn_id='databricks_default',
         http_path=os.environ.get('DATABRICKS_HTTP_PATH'),
         sql="""
-            COPY INTO market_risk_dev.bronze.positions
+            COPY INTO {{ var.value.databricks_catalog }}.bronze.positions
             FROM (
             SELECT
                 trade_id,
@@ -147,7 +147,7 @@ with DAG(
         databricks_conn_id='databricks_default',
         http_path=os.environ.get('DATABRICKS_HTTP_PATH'),
         sql="""
-            COPY INTO market_risk_dev.bronze.fx_rates
+            COPY INTO {{ var.value.databricks_catalog }}.bronze.fx_rates
             FROM (
             SELECT
                 currency,

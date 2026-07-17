@@ -27,6 +27,7 @@ from config import (
     DATABRICKS_HOST,
     DATABRICKS_TOKEN,
     DATABRICKS_HTTP_PATH,
+    DATABRICKS_CATALOG,
     setup_logging,
 )
 from s3_utils import get_client, verify_bucket, upload_df
@@ -36,10 +37,10 @@ logger = logging.getLogger(__name__)
 LIMITS_FILE = pathlib.Path(__file__).parent.parent / "data" / "raw" / "reference" / "desk_limits.csv"
 S3_KEY      = "raw/reference/desk_limits.csv"
 
-TRUNCATE_SQL = "TRUNCATE TABLE market_risk_dev.bronze.desk_limits"
+TRUNCATE_SQL = f"TRUNCATE TABLE {DATABRICKS_CATALOG}.bronze.desk_limits"
 
 COPY_INTO_SQL = f"""
-COPY INTO market_risk_dev.bronze.desk_limits
+COPY INTO {DATABRICKS_CATALOG}.bronze.desk_limits
 FROM (
   SELECT
     desk,
