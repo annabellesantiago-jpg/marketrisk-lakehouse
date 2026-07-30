@@ -1,0 +1,204 @@
+dashboard_title: CRO Executive Dashboard
+description: null
+css: ''
+slug: null
+certified_by: null
+certification_details: null
+published: true
+uuid: 7d0898f7-989c-4937-aa63-e733a422e7ba
+position:
+  CHART-explore-2-1:
+    children: []
+    id: CHART-explore-2-1
+    meta:
+      chartId: 2
+      height: 50
+      sliceName: CRO - VaR 99% by Desk
+      uuid: 9cd03e2e-f643-47f2-a7c5-4f279da7abfa
+      width: 6
+    parents:
+    - ROOT_ID
+    - GRID_ID
+    - ROW-CLLryuK7CHx-sDy8q5i2F
+    type: CHART
+  CHART-explore-3-1:
+    children: []
+    id: CHART-explore-3-1
+    meta:
+      chartId: 3
+      height: 50
+      sliceName: CRO - Limit Utilisation by Desk
+      uuid: dd461a8c-7de3-4ce2-b286-7478c3805e45
+      width: 6
+    parents:
+    - ROOT_ID
+    - GRID_ID
+    - ROW-CLLryuK7CHx-sDy8q5i2F
+    type: CHART
+  CHART-explore-4-1:
+    children: []
+    id: CHART-explore-4-1
+    meta:
+      chartId: 4
+      height: 50
+      sliceName: CRO - Worst Stress Loss by Desk
+      uuid: 4c7ad15c-3d33-4841-bd97-ee0a47149712
+      width: 6
+    parents:
+    - ROOT_ID
+    - GRID_ID
+    - ROW-yPU_oGHdZZN3ki5B1Js91
+    type: CHART
+  CHART-explore-5-1:
+    children: []
+    id: CHART-explore-5-1
+    meta:
+      chartId: 5
+      height: 50
+      sliceName: CRO - Top Counterparty by Desk
+      uuid: 14f5bf17-770d-4f72-8001-e23109a6a074
+      width: 6
+    parents:
+    - ROOT_ID
+    - GRID_ID
+    - ROW-yPU_oGHdZZN3ki5B1Js91
+    type: CHART
+  CHART-lwNXFy9DjI5NaOWNvVIU9:
+    children: []
+    id: CHART-lwNXFy9DjI5NaOWNvVIU9
+    meta:
+      chartId: 1
+      height: 27
+      sliceName: CRO - Risk Status Overview
+      uuid: 8518f7f9-5c14-4fc1-aa58-588724c06a12
+      width: 12
+    parents:
+    - ROOT_ID
+    - GRID_ID
+    - ROW-sN2QwCGGeGyOAyj28ijZr
+    type: CHART
+  DASHBOARD_VERSION_KEY: v2
+  GRID_ID:
+    children:
+    - ROW-sN2QwCGGeGyOAyj28ijZr
+    - ROW-CLLryuK7CHx-sDy8q5i2F
+    - ROW-yPU_oGHdZZN3ki5B1Js91
+    id: GRID_ID
+    parents:
+    - ROOT_ID
+    type: GRID
+  HEADER_ID:
+    id: HEADER_ID
+    meta:
+      text: CRO Executive Dashboard
+    type: HEADER
+  ROOT_ID:
+    children:
+    - GRID_ID
+    id: ROOT_ID
+    type: ROOT
+  ROW-CLLryuK7CHx-sDy8q5i2F:
+    children:
+    - CHART-explore-2-1
+    - CHART-explore-3-1
+    id: ROW-CLLryuK7CHx-sDy8q5i2F
+    meta:
+      '0': ROOT_ID
+      background: BACKGROUND_WHITE
+    parents:
+    - ROOT_ID
+    - GRID_ID
+    type: ROW
+  ROW-sN2QwCGGeGyOAyj28ijZr:
+    children:
+    - CHART-lwNXFy9DjI5NaOWNvVIU9
+    id: ROW-sN2QwCGGeGyOAyj28ijZr
+    meta:
+      background: BACKGROUND_TRANSPARENT
+    parents:
+    - ROOT_ID
+    - GRID_ID
+    type: ROW
+  ROW-yPU_oGHdZZN3ki5B1Js91:
+    children:
+    - CHART-explore-4-1
+    - CHART-explore-5-1
+    id: ROW-yPU_oGHdZZN3ki5B1Js91
+    meta:
+      '0': ROOT_ID
+      background: BACKGROUND_TRANSPARENT
+    parents:
+    - ROOT_ID
+    - GRID_ID
+    type: ROW
+metadata:
+  chart_configuration:
+    '1':
+      id: 1
+      crossFilters:
+        scope: global
+        chartsInScope:
+        - 2
+        - 3
+        - 4
+        - 5
+    '2':
+      id: 2
+      crossFilters:
+        scope: global
+        chartsInScope:
+        - 1
+        - 3
+        - 4
+        - 5
+    '3':
+      id: 3
+      crossFilters:
+        scope: global
+        chartsInScope:
+        - 1
+        - 2
+        - 4
+        - 5
+    '4':
+      id: 4
+      crossFilters:
+        scope: global
+        chartsInScope:
+        - 1
+        - 2
+        - 3
+        - 5
+    '5':
+      id: 5
+      crossFilters:
+        scope: global
+        chartsInScope:
+        - 1
+        - 2
+        - 3
+        - 4
+  global_chart_configuration:
+    scope:
+      rootPath:
+      - ROOT_ID
+      excluded: []
+    chartsInScope:
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+  color_scheme: ''
+  refresh_frequency: 0
+  expanded_slices: {}
+  label_colors:
+    RED: '#FF0000'
+    AMBER: '#FFA500'
+    GREEN: '#00AA00'
+  timed_refresh_immune_slices: []
+  cross_filters_enabled: true
+  default_filters: '{}'
+  shared_label_colors: {}
+  color_scheme_domain: []
+version: 1.0.0

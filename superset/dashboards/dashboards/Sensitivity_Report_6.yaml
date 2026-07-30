@@ -1,0 +1,191 @@
+dashboard_title: Sensitivity Report
+description: null
+css: ''
+slug: null
+certified_by: null
+certification_details: null
+published: true
+uuid: 7d9aa36b-3dfc-47fd-b43a-56346b742857
+position:
+  CHART-explore-18-1:
+    children: []
+    id: CHART-explore-18-1
+    meta:
+      chartId: 18
+      height: 50
+      sliceName: Sensitivity - FX Delta by Currency
+      uuid: 90f9e194-8611-4f64-aa49-d39d542fb7e2
+      width: 4
+    parents:
+    - ROOT_ID
+    - GRID_ID
+    - ROW-ayysNhzsQlyva5SpqfxqL
+    type: CHART
+  CHART-explore-19-1:
+    children: []
+    id: CHART-explore-19-1
+    meta:
+      chartId: 19
+      height: 50
+      sliceName: Sensitivity - Equity Delta by Sector
+      uuid: 6c705327-5b9f-4cc3-8d61-27176b1edce5
+      width: 4
+    parents:
+    - ROOT_ID
+    - GRID_ID
+    - ROW-ayysNhzsQlyva5SpqfxqL
+    type: CHART
+  CHART-explore-20-1:
+    children: []
+    id: CHART-explore-20-1
+    meta:
+      chartId: 20
+      height: 50
+      sliceName: Sensitivity - PV01 by Tenor
+      uuid: 5ff8db95-e29b-4588-a9fc-ecf4f5ea657a
+      width: 4
+    parents:
+    - ROOT_ID
+    - GRID_ID
+    - ROW-ayysNhzsQlyva5SpqfxqL
+    type: CHART
+  CHART-explore-21-1:
+    children: []
+    id: CHART-explore-21-1
+    meta:
+      chartId: 21
+      height: 50
+      sliceName: Sensitivity - CS01 by Desk
+      uuid: 82c13675-60cd-44c9-8829-9a5138e1df3d
+      width: 4
+    parents:
+    - ROOT_ID
+    - GRID_ID
+    - ROW--oo2Fb5M68A1hUVnuqria
+    type: CHART
+  CHART-explore-22-1:
+    children: []
+    id: CHART-explore-22-1
+    meta:
+      chartId: 22
+      height: 50
+      sliceName: Sensitivity - Detail Table
+      uuid: 3a0620d2-faf4-4cda-a5f7-9ff23c066e94
+      width: 8
+    parents:
+    - ROOT_ID
+    - GRID_ID
+    - ROW--oo2Fb5M68A1hUVnuqria
+    type: CHART
+  DASHBOARD_VERSION_KEY: v2
+  GRID_ID:
+    children:
+    - ROW-ayysNhzsQlyva5SpqfxqL
+    - ROW--oo2Fb5M68A1hUVnuqria
+    id: GRID_ID
+    parents:
+    - ROOT_ID
+    type: GRID
+  HEADER_ID:
+    id: HEADER_ID
+    meta:
+      text: Sensitivity Report
+    type: HEADER
+  ROOT_ID:
+    children:
+    - GRID_ID
+    id: ROOT_ID
+    type: ROOT
+  ROW--oo2Fb5M68A1hUVnuqria:
+    children:
+    - CHART-explore-21-1
+    - CHART-explore-22-1
+    id: ROW--oo2Fb5M68A1hUVnuqria
+    meta:
+      '0': ROOT_ID
+      background: BACKGROUND_TRANSPARENT
+    parents:
+    - ROOT_ID
+    - GRID_ID
+    type: ROW
+  ROW-ayysNhzsQlyva5SpqfxqL:
+    children:
+    - CHART-explore-18-1
+    - CHART-explore-19-1
+    - CHART-explore-20-1
+    id: ROW-ayysNhzsQlyva5SpqfxqL
+    meta:
+      '0': ROOT_ID
+      background: BACKGROUND_TRANSPARENT
+    parents:
+    - ROOT_ID
+    - GRID_ID
+    type: ROW
+metadata:
+  chart_configuration:
+    '18':
+      id: 18
+      crossFilters:
+        scope: global
+        chartsInScope:
+        - 19
+        - 20
+        - 21
+        - 22
+    '19':
+      id: 19
+      crossFilters:
+        scope: global
+        chartsInScope:
+        - 18
+        - 20
+        - 21
+        - 22
+    '20':
+      id: 20
+      crossFilters:
+        scope: global
+        chartsInScope:
+        - 18
+        - 19
+        - 21
+        - 22
+    '21':
+      id: 21
+      crossFilters:
+        scope: global
+        chartsInScope:
+        - 18
+        - 19
+        - 20
+        - 22
+    '22':
+      id: 22
+      crossFilters:
+        scope: global
+        chartsInScope:
+        - 18
+        - 19
+        - 20
+        - 21
+  global_chart_configuration:
+    scope:
+      rootPath:
+      - ROOT_ID
+      excluded: []
+    chartsInScope:
+    - 18
+    - 19
+    - 20
+    - 21
+    - 22
+  color_scheme: ''
+  refresh_frequency: 0
+  expanded_slices: {}
+  label_colors: {}
+  timed_refresh_immune_slices: []
+  cross_filters_enabled: true
+  default_filters: '{}'
+  shared_label_colors: {}
+  color_scheme_domain: []
+version: 1.0.0

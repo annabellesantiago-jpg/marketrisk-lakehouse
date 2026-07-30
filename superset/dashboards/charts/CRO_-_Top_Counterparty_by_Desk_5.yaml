@@ -1,0 +1,47 @@
+slice_name: CRO - Top Counterparty by Desk
+description: null
+certified_by: null
+certification_details: null
+viz_type: table
+params:
+  datasource: 1__table
+  viz_type: table
+  query_mode: raw
+  groupby: []
+  time_grain_sqla: P1D
+  temporal_columns_lookup:
+    summary_date: true
+    _gold_loaded_at: true
+  all_columns:
+  - desk
+  - largest_counterparty
+  - largest_counterparty_pct
+  percent_metrics: []
+  adhoc_filters:
+  - clause: WHERE
+    subject: summary_date
+    operator: TEMPORAL_RANGE
+    comparator: No filter
+    expressionType: SIMPLE
+  order_by_cols:
+  - '["largest_counterparty_pct", false]'
+  row_limit: 10
+  server_page_length: 10
+  order_desc: true
+  table_timestamp_format: smart_date
+  allow_render_html: true
+  show_cell_bars: true
+  color_pn: true
+  comparison_color_scheme: Green
+  comparison_type: values
+  extra_form_data: {}
+  dashboards:
+  - 1
+query_context: '{"datasource":{"id":1,"type":"table"},"force":false,"queries":[{"filters":[{"col":"summary_date","op":"TEMPORAL_RANGE","val":"No
+  filter"}],"extras":{"having":"","where":""},"applied_time_extras":{},"columns":["desk","largest_counterparty","largest_counterparty_pct"],"orderby":[["largest_counterparty_pct",false]],"annotation_layers":[],"row_limit":10,"series_limit":0,"order_desc":true,"url_params":{},"custom_params":{},"custom_form_data":{},"post_processing":[],"time_offsets":[]}],"form_data":{"datasource":"1__table","viz_type":"table","query_mode":"raw","groupby":[],"time_grain_sqla":"P1D","temporal_columns_lookup":{"summary_date":true,"_gold_loaded_at":true},"all_columns":["desk","largest_counterparty","largest_counterparty_pct"],"percent_metrics":[],"adhoc_filters":[{"clause":"WHERE","subject":"summary_date","operator":"TEMPORAL_RANGE","comparator":"No
+  filter","expressionType":"SIMPLE"}],"order_by_cols":["[\"largest_counterparty_pct\",
+  false]"],"row_limit":10,"server_page_length":10,"order_desc":true,"table_timestamp_format":"smart_date","allow_render_html":true,"show_cell_bars":true,"color_pn":true,"comparison_color_scheme":"Green","comparison_type":"values","extra_form_data":{},"dashboards":[1],"force":false,"result_format":"json","result_type":"full","include_time":false},"result_format":"json","result_type":"full"}'
+cache_timeout: null
+uuid: 14f5bf17-770d-4f72-8001-e23109a6a074
+version: 1.0.0
+dataset_uuid: dd43cd73-3821-43ba-bdae-f66e0f634497

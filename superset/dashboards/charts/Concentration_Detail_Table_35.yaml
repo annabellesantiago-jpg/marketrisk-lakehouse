@@ -1,0 +1,49 @@
+slice_name: Concentration Detail Table
+description: null
+certified_by: null
+certification_details: null
+viz_type: table
+params:
+  datasource: 11__table
+  viz_type: table
+  slice_id: 35
+  query_mode: raw
+  groupby: []
+  temporal_columns_lookup:
+    as_of_date: true
+    _gold_loaded_at: true
+  all_columns:
+  - desk
+  - concentration_type
+  - entity_name
+  - gross_exposure_usd
+  - pct_of_desk_total
+  - concentration_level
+  - desk_rank
+  percent_metrics: []
+  adhoc_filters:
+  - clause: WHERE
+    comparator: No filter
+    expressionType: SIMPLE
+    operator: TEMPORAL_RANGE
+    subject: as_of_date
+  order_by_cols:
+  - '["desk_rank", true]'
+  row_limit: 1000
+  table_timestamp_format: smart_date
+  allow_render_html: true
+  show_cell_bars: true
+  color_pn: true
+  comparison_color_scheme: Green
+  conditional_formatting: []
+  extra_form_data: {}
+  dashboards:
+  - 8
+query_context: '{"datasource":{"id":11,"type":"table"},"force":false,"queries":[{"filters":[{"col":"as_of_date","op":"TEMPORAL_RANGE","val":"No
+  filter"}],"extras":{"having":"","where":""},"applied_time_extras":{},"columns":["desk","concentration_type","entity_name","gross_exposure_usd","pct_of_desk_total","concentration_level","desk_rank"],"orderby":[["desk_rank",true]],"annotation_layers":[],"row_limit":1000,"series_limit":0,"order_desc":true,"url_params":{},"custom_params":{},"custom_form_data":{},"post_processing":[],"time_offsets":[]}],"form_data":{"datasource":"11__table","viz_type":"table","slice_id":35,"query_mode":"raw","groupby":[],"temporal_columns_lookup":{"as_of_date":true,"_gold_loaded_at":true},"all_columns":["desk","concentration_type","entity_name","gross_exposure_usd","pct_of_desk_total","concentration_level","desk_rank"],"percent_metrics":[],"adhoc_filters":[{"clause":"WHERE","comparator":"No
+  filter","expressionType":"SIMPLE","operator":"TEMPORAL_RANGE","subject":"as_of_date"}],"order_by_cols":["[\"desk_rank\",
+  true]"],"row_limit":1000,"table_timestamp_format":"smart_date","allow_render_html":true,"show_cell_bars":true,"color_pn":true,"comparison_color_scheme":"Green","conditional_formatting":[],"extra_form_data":{},"dashboards":[8],"force":false,"result_format":"json","result_type":"full","include_time":false},"result_format":"json","result_type":"full"}'
+cache_timeout: null
+uuid: cb3ca249-9bc1-411e-8817-8adf8b57d9a6
+version: 1.0.0
+dataset_uuid: 26ca03e7-b508-445a-8d03-55982a3f2074

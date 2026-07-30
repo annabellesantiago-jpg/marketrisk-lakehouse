@@ -1,0 +1,16 @@
+database_name: MarketRisk Gold
+sqlalchemy_uri: databricks://token:XXXXXXXXXX@dbc-4182d793-e59a.cloud.databricks.com:443?catalog=market_risk_dev&http_path=%2Fsql%2F1.0%2Fwarehouses%2Fcf4f34c37736cebe&schema=gold
+cache_timeout: null
+expose_in_sqllab: true
+allow_run_async: false
+allow_ctas: false
+allow_cvas: false
+allow_dml: false
+allow_file_upload: false
+extra:
+  metadata_params: {}
+  engine_params: {}
+  metadata_cache_timeout: {}
+  schemas_allowed_for_file_upload: []
+uuid: 1746d3e3-9c29-46a7-a9d5-2f61bb96c221
+version: 1.0.0
