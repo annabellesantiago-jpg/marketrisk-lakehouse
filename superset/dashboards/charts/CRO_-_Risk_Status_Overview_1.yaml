@@ -1,0 +1,92 @@
+slice_name: CRO - Risk Status Overview
+description: null
+certified_by: null
+certification_details: null
+viz_type: table
+params:
+  datasource: 1__table
+  viz_type: table
+  slice_id: 1
+  query_mode: raw
+  groupby:
+  - summary_date
+  time_grain_sqla: P1D
+  temporal_columns_lookup:
+    summary_date: true
+    _gold_loaded_at: true
+  metrics: []
+  all_columns:
+  - desk
+  - overall_risk_status
+  - var_99_usd
+  - utilisation_pct
+  - worst_stress_pnl_usd
+  percent_metrics: []
+  adhoc_filters:
+  - clause: WHERE
+    comparator: '2026-07-13T00:00:00 : 2026-07-14T00:00:00'
+    datasourceWarning: false
+    expressionType: SIMPLE
+    filterOptionName: filter_cne31zqsul_g4vlh833d6j
+    isExtra: false
+    isNew: false
+    operator: TEMPORAL_RANGE
+    sqlExpression: null
+    subject: summary_date
+  order_by_cols:
+  - '["utilisation_pct", false]'
+  row_limit: '4'
+  table_timestamp_format: smart_date
+  include_search: false
+  allow_rearrange_columns: true
+  allow_render_html: true
+  show_cell_bars: true
+  align_pn: true
+  color_pn: true
+  comparison_color_scheme: Green
+  conditional_formatting:
+  - colorScheme: '#ACE1C4'
+    column: utilisation_pct
+    operator: <
+    targetValue: 75
+  - colorScheme: '#FDE380'
+    column: utilisation_pct
+    operator: "\u2265"
+    targetValue: 75
+  - colorScheme: '#EFA1AA'
+    column: utilisation_pct
+    operator: "\u2265"
+    targetValue: 100
+  extra_form_data: {}
+  dashboards:
+  - 1
+query_context: "{\"datasource\":{\"id\":1,\"type\":\"table\"},\"force\":false,\"queries\"\
+  :[{\"filters\":[{\"col\":\"summary_date\",\"op\":\"TEMPORAL_RANGE\",\"val\":\"2026-07-13T00:00:00\
+  \ : 2026-07-14T00:00:00\"}],\"extras\":{\"having\":\"\",\"where\":\"\"},\"applied_time_extras\"\
+  :{},\"columns\":[\"desk\",\"overall_risk_status\",\"var_99_usd\",\"utilisation_pct\"\
+  ,\"worst_stress_pnl_usd\"],\"orderby\":[[\"utilisation_pct\",false]],\"annotation_layers\"\
+  :[],\"row_limit\":4,\"series_limit\":0,\"order_desc\":true,\"url_params\":{},\"\
+  custom_params\":{},\"custom_form_data\":{},\"post_processing\":[],\"time_offsets\"\
+  :[]}],\"form_data\":{\"datasource\":\"1__table\",\"viz_type\":\"table\",\"slice_id\"\
+  :1,\"query_mode\":\"raw\",\"groupby\":[\"summary_date\"],\"time_grain_sqla\":\"\
+  P1D\",\"temporal_columns_lookup\":{\"summary_date\":true,\"_gold_loaded_at\":true},\"\
+  metrics\":[],\"all_columns\":[\"desk\",\"overall_risk_status\",\"var_99_usd\",\"\
+  utilisation_pct\",\"worst_stress_pnl_usd\"],\"percent_metrics\":[],\"adhoc_filters\"\
+  :[{\"clause\":\"WHERE\",\"comparator\":\"2026-07-13T00:00:00 : 2026-07-14T00:00:00\"\
+  ,\"datasourceWarning\":false,\"expressionType\":\"SIMPLE\",\"filterOptionName\"\
+  :\"filter_cne31zqsul_g4vlh833d6j\",\"isExtra\":false,\"isNew\":false,\"operator\"\
+  :\"TEMPORAL_RANGE\",\"sqlExpression\":null,\"subject\":\"summary_date\"}],\"order_by_cols\"\
+  :[\"[\\\"utilisation_pct\\\", false]\"],\"row_limit\":\"4\",\"table_timestamp_format\"\
+  :\"smart_date\",\"include_search\":false,\"allow_rearrange_columns\":true,\"allow_render_html\"\
+  :true,\"show_cell_bars\":true,\"align_pn\":true,\"color_pn\":true,\"comparison_color_scheme\"\
+  :\"Green\",\"conditional_formatting\":[{\"colorScheme\":\"#ACE1C4\",\"column\":\"\
+  utilisation_pct\",\"operator\":\"<\",\"targetValue\":75},{\"colorScheme\":\"#FDE380\"\
+  ,\"column\":\"utilisation_pct\",\"operator\":\"\u2265\",\"targetValue\":75},{\"\
+  colorScheme\":\"#EFA1AA\",\"column\":\"utilisation_pct\",\"operator\":\"\u2265\"\
+  ,\"targetValue\":100}],\"extra_form_data\":{},\"dashboards\":[1],\"force\":false,\"\
+  result_format\":\"json\",\"result_type\":\"full\",\"include_time\":false},\"result_format\"\
+  :\"json\",\"result_type\":\"full\"}"
+cache_timeout: null
+uuid: 8518f7f9-5c14-4fc1-aa58-588724c06a12
+version: 1.0.0
+dataset_uuid: dd43cd73-3821-43ba-bdae-f66e0f634497

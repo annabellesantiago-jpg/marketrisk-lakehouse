@@ -1,0 +1,88 @@
+slice_name: Concentration By Asset Class
+description: null
+certified_by: null
+certification_details: null
+viz_type: pie
+params:
+  datasource: 11__table
+  viz_type: pie
+  groupby:
+  - entity_name
+  metric:
+    expressionType: SIMPLE
+    column:
+      advanced_data_type: null
+      certification_details: null
+      certified_by: null
+      column_name: gross_exposure_usd
+      description: null
+      expression: null
+      filterable: true
+      groupby: true
+      id: 100
+      is_certified: false
+      is_dttm: false
+      python_date_format: null
+      type: FLOAT
+      type_generic: 0
+      verbose_name: null
+      warning_markdown: null
+    aggregate: SUM
+    sqlExpression: null
+    datasourceWarning: false
+    hasCustomLabel: false
+    label: SUM(gross_exposure_usd)
+    optionName: metric_so0f1nw519_tvlqorbgaln
+  adhoc_filters:
+  - expressionType: SIMPLE
+    subject: as_of_date
+    operator: TEMPORAL_RANGE
+    comparator: No filter
+    clause: WHERE
+    sqlExpression: null
+    isExtra: false
+    isNew: false
+    datasourceWarning: false
+    filterOptionName: filter_20de6h99skz_r8uxc9alr4a
+  - expressionType: SIMPLE
+    subject: concentration_type
+    operator: ==
+    operatorId: EQUALS
+    comparator: ASSET_CLASS
+    clause: WHERE
+    sqlExpression: null
+    isExtra: false
+    isNew: false
+    datasourceWarning: false
+    filterOptionName: filter_hv8q33ga14k_ug3uc1p23h9
+  row_limit: 100
+  sort_by_metric: true
+  color_scheme: supersetColors
+  show_labels_threshold: 5
+  roseType: null
+  show_legend: true
+  legendType: scroll
+  legendOrientation: bottom
+  label_type: key
+  number_format: SMART_NUMBER
+  currency_format:
+    symbol: USD
+    symbolPosition: prefix
+  date_format: smart_date
+  show_labels: true
+  labels_outside: true
+  label_line: false
+  show_total: true
+  outerRadius: 88
+  donut: true
+  innerRadius: 37
+  extra_form_data: {}
+  dashboards:
+  - 8
+query_context: '{"datasource":{"id":11,"type":"table"},"force":false,"queries":[{"filters":[{"col":"as_of_date","op":"TEMPORAL_RANGE","val":"No
+  filter"},{"col":"concentration_type","op":"==","val":"ASSET_CLASS"}],"extras":{"having":"","where":""},"applied_time_extras":{},"columns":["entity_name"],"metrics":[{"expressionType":"SIMPLE","column":{"advanced_data_type":null,"certification_details":null,"certified_by":null,"column_name":"gross_exposure_usd","description":null,"expression":null,"filterable":true,"groupby":true,"id":100,"is_certified":false,"is_dttm":false,"python_date_format":null,"type":"FLOAT","type_generic":0,"verbose_name":null,"warning_markdown":null},"aggregate":"SUM","sqlExpression":null,"datasourceWarning":false,"hasCustomLabel":false,"label":"SUM(gross_exposure_usd)","optionName":"metric_so0f1nw519_tvlqorbgaln"}],"orderby":[[{"expressionType":"SIMPLE","column":{"advanced_data_type":null,"certification_details":null,"certified_by":null,"column_name":"gross_exposure_usd","description":null,"expression":null,"filterable":true,"groupby":true,"id":100,"is_certified":false,"is_dttm":false,"python_date_format":null,"type":"FLOAT","type_generic":0,"verbose_name":null,"warning_markdown":null},"aggregate":"SUM","sqlExpression":null,"datasourceWarning":false,"hasCustomLabel":false,"label":"SUM(gross_exposure_usd)","optionName":"metric_so0f1nw519_tvlqorbgaln"},false]],"annotation_layers":[],"row_limit":100,"series_limit":0,"order_desc":true,"url_params":{},"custom_params":{},"custom_form_data":{}}],"form_data":{"datasource":"11__table","viz_type":"pie","groupby":["entity_name"],"metric":{"expressionType":"SIMPLE","column":{"advanced_data_type":null,"certification_details":null,"certified_by":null,"column_name":"gross_exposure_usd","description":null,"expression":null,"filterable":true,"groupby":true,"id":100,"is_certified":false,"is_dttm":false,"python_date_format":null,"type":"FLOAT","type_generic":0,"verbose_name":null,"warning_markdown":null},"aggregate":"SUM","sqlExpression":null,"datasourceWarning":false,"hasCustomLabel":false,"label":"SUM(gross_exposure_usd)","optionName":"metric_so0f1nw519_tvlqorbgaln"},"adhoc_filters":[{"expressionType":"SIMPLE","subject":"as_of_date","operator":"TEMPORAL_RANGE","comparator":"No
+  filter","clause":"WHERE","sqlExpression":null,"isExtra":false,"isNew":false,"datasourceWarning":false,"filterOptionName":"filter_20de6h99skz_r8uxc9alr4a"},{"expressionType":"SIMPLE","subject":"concentration_type","operator":"==","operatorId":"EQUALS","comparator":"ASSET_CLASS","clause":"WHERE","sqlExpression":null,"isExtra":false,"isNew":false,"datasourceWarning":false,"filterOptionName":"filter_hv8q33ga14k_ug3uc1p23h9"}],"row_limit":100,"sort_by_metric":true,"color_scheme":"supersetColors","show_labels_threshold":5,"roseType":null,"show_legend":true,"legendType":"scroll","legendOrientation":"bottom","label_type":"key","number_format":"SMART_NUMBER","currency_format":{"symbol":"USD","symbolPosition":"prefix"},"date_format":"smart_date","show_labels":true,"labels_outside":true,"label_line":false,"show_total":true,"outerRadius":88,"donut":true,"innerRadius":37,"extra_form_data":{},"dashboards":[8],"force":false,"result_format":"json","result_type":"full"},"result_format":"json","result_type":"full"}'
+cache_timeout: null
+uuid: 5c094673-34b1-4fab-b1b2-0363b0eb72e7
+version: 1.0.0
+dataset_uuid: 26ca03e7-b508-445a-8d03-55982a3f2074

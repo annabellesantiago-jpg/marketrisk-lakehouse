@@ -1,0 +1,88 @@
+slice_name: CRO - Limit Utilisation by Desk
+description: null
+certified_by: null
+certification_details: null
+viz_type: echarts_timeseries_bar
+params:
+  datasource: 1__table
+  viz_type: echarts_timeseries_bar
+  slice_id: 3
+  x_axis: desk
+  x_axis_sort_series: name
+  x_axis_sort_series_ascending: false
+  metrics:
+  - aggregate: SUM
+    column:
+      advanced_data_type: null
+      certification_details: null
+      certified_by: null
+      column_name: utilisation_pct
+      description: null
+      expression: null
+      filterable: true
+      groupby: true
+      id: 13
+      is_certified: false
+      is_dttm: false
+      python_date_format: null
+      type: FLOAT
+      type_generic: 0
+      verbose_name: null
+      warning_markdown: null
+    datasourceWarning: false
+    expressionType: SIMPLE
+    hasCustomLabel: false
+    label: SUM(utilisation_pct)
+    optionName: metric_0uhd6y7y4jka_7hahgqepzem
+    sqlExpression: null
+  groupby:
+  - limit_status
+  adhoc_filters:
+  - clause: WHERE
+    comparator: No filter
+    datasourceWarning: false
+    expressionType: SIMPLE
+    filterOptionName: filter_a1oq7p9v1qc_hh83uoludx5
+    isExtra: false
+    isNew: false
+    operator: TEMPORAL_RANGE
+    sqlExpression: null
+    subject: summary_date
+  row_limit: 10
+  truncate_metric: true
+  show_empty_columns: true
+  annotation_layers: []
+  orientation: vertical
+  y_axis_title: ''
+  y_axis_title_margin: 15
+  y_axis_title_position: Left
+  sort_series_type: name
+  sort_series_ascending: false
+  color_scheme: supersetColors
+  show_value: true
+  stack: null
+  minorTicks: false
+  zoomable: false
+  show_legend: true
+  legendType: scroll
+  legendOrientation: bottom
+  legendMargin: null
+  y_axis_format: SMART_NUMBER
+  currency_format: {}
+  logAxis: false
+  minorSplitLine: false
+  truncateXAxis: true
+  truncateYAxis: false
+  rich_tooltip: true
+  tooltipTimeFormat: smart_date
+  extra_form_data: {}
+  dashboards:
+  - 1
+  - 4
+query_context: '{"datasource":{"id":1,"type":"table"},"force":false,"queries":[{"filters":[{"col":"summary_date","op":"TEMPORAL_RANGE","val":"No
+  filter"}],"extras":{"having":"","where":""},"applied_time_extras":{},"columns":[{"columnType":"BASE_AXIS","sqlExpression":"desk","label":"desk","expressionType":"SQL"},"limit_status"],"metrics":[{"aggregate":"SUM","column":{"advanced_data_type":null,"certification_details":null,"certified_by":null,"column_name":"utilisation_pct","description":null,"expression":null,"filterable":true,"groupby":true,"id":13,"is_certified":false,"is_dttm":false,"python_date_format":null,"type":"FLOAT","type_generic":0,"verbose_name":null,"warning_markdown":null},"datasourceWarning":false,"expressionType":"SIMPLE","hasCustomLabel":false,"label":"SUM(utilisation_pct)","optionName":"metric_0uhd6y7y4jka_7hahgqepzem","sqlExpression":null}],"orderby":[[{"aggregate":"SUM","column":{"advanced_data_type":null,"certification_details":null,"certified_by":null,"column_name":"utilisation_pct","description":null,"expression":null,"filterable":true,"groupby":true,"id":13,"is_certified":false,"is_dttm":false,"python_date_format":null,"type":"FLOAT","type_generic":0,"verbose_name":null,"warning_markdown":null},"datasourceWarning":false,"expressionType":"SIMPLE","hasCustomLabel":false,"label":"SUM(utilisation_pct)","optionName":"metric_0uhd6y7y4jka_7hahgqepzem","sqlExpression":null},false]],"annotation_layers":[],"row_limit":10,"series_columns":["limit_status"],"series_limit":0,"order_desc":true,"url_params":{},"custom_params":{},"custom_form_data":{},"time_offsets":[],"post_processing":[{"operation":"pivot","options":{"index":["desk"],"columns":["limit_status"],"aggregates":{"SUM(utilisation_pct)":{"operator":"mean"}},"drop_missing_columns":false}},{"operation":"rename","options":{"columns":{"SUM(utilisation_pct)":null},"level":0,"inplace":true}},{"operation":"flatten"}]}],"form_data":{"datasource":"1__table","viz_type":"echarts_timeseries_bar","slice_id":3,"x_axis":"desk","x_axis_sort_series":"name","x_axis_sort_series_ascending":false,"metrics":[{"aggregate":"SUM","column":{"advanced_data_type":null,"certification_details":null,"certified_by":null,"column_name":"utilisation_pct","description":null,"expression":null,"filterable":true,"groupby":true,"id":13,"is_certified":false,"is_dttm":false,"python_date_format":null,"type":"FLOAT","type_generic":0,"verbose_name":null,"warning_markdown":null},"datasourceWarning":false,"expressionType":"SIMPLE","hasCustomLabel":false,"label":"SUM(utilisation_pct)","optionName":"metric_0uhd6y7y4jka_7hahgqepzem","sqlExpression":null}],"groupby":["limit_status"],"adhoc_filters":[{"clause":"WHERE","comparator":"No
+  filter","datasourceWarning":false,"expressionType":"SIMPLE","filterOptionName":"filter_a1oq7p9v1qc_hh83uoludx5","isExtra":false,"isNew":false,"operator":"TEMPORAL_RANGE","sqlExpression":null,"subject":"summary_date"}],"row_limit":10,"truncate_metric":true,"show_empty_columns":true,"annotation_layers":[],"orientation":"vertical","y_axis_title":"","y_axis_title_margin":15,"y_axis_title_position":"Left","sort_series_type":"name","sort_series_ascending":false,"color_scheme":"supersetColors","show_value":true,"stack":null,"minorTicks":false,"zoomable":false,"show_legend":true,"legendType":"scroll","legendOrientation":"bottom","legendMargin":null,"y_axis_format":"SMART_NUMBER","currency_format":{},"logAxis":false,"minorSplitLine":false,"truncateXAxis":true,"truncateYAxis":false,"rich_tooltip":true,"tooltipTimeFormat":"smart_date","extra_form_data":{},"dashboards":[1,4],"force":false,"result_format":"json","result_type":"full"},"result_format":"json","result_type":"full"}'
+cache_timeout: null
+uuid: dd461a8c-7de3-4ce2-b286-7478c3805e45
+version: 1.0.0
+dataset_uuid: dd43cd73-3821-43ba-bdae-f66e0f634497

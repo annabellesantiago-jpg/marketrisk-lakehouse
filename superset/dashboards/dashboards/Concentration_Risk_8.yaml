@@ -1,0 +1,266 @@
+dashboard_title: Concentration Risk
+description: null
+css: ''
+slug: null
+certified_by: null
+certification_details: null
+published: true
+uuid: 38961dde-2bc0-4723-ad4e-97e66a3604e5
+position:
+  CHART-explore-29-1:
+    children: []
+    id: CHART-explore-29-1
+    meta:
+      chartId: 29
+      height: 50
+      sliceName: Top Counterparty Exposures
+      uuid: d56c8c8f-6fce-496d-8247-f5a4692d0f6a
+      width: 4
+    parents:
+    - ROOT_ID
+    - GRID_ID
+    - ROW-ArfX6gaYlwlcgD3hkncdh
+    type: CHART
+  CHART-explore-30-1:
+    children: []
+    id: CHART-explore-30-1
+    meta:
+      chartId: 30
+      height: 50
+      sliceName: Concentration By Asset Class
+      uuid: 5c094673-34b1-4fab-b1b2-0363b0eb72e7
+      width: 4
+    parents:
+    - ROOT_ID
+    - GRID_ID
+    - ROW-rdgTPxNXaB5Wd7LvNFEWF
+    type: CHART
+  CHART-explore-31-1:
+    children: []
+    id: CHART-explore-31-1
+    meta:
+      chartId: 31
+      height: 50
+      sliceName: Geographic Diversification
+      uuid: 425f222d-ef9a-4a79-bbba-67289f213547
+      width: 4
+    parents:
+    - ROOT_ID
+    - GRID_ID
+    - ROW-rdgTPxNXaB5Wd7LvNFEWF
+    type: CHART
+  CHART-explore-32-1:
+    children: []
+    id: CHART-explore-32-1
+    meta:
+      chartId: 32
+      height: 50
+      sliceName: Sector Concentration
+      uuid: 031795f0-6ffc-4da9-bcd2-e2ee2cb859e9
+      width: 4
+    parents:
+    - ROOT_ID
+    - GRID_ID
+    - ROW-ArfX6gaYlwlcgD3hkncdh
+    type: CHART
+  CHART-explore-33-1:
+    children: []
+    id: CHART-explore-33-1
+    meta:
+      chartId: 33
+      height: 50
+      sliceName: Maturity Profile
+      uuid: 3a8b1f7b-2381-4b62-9adf-40fa5053066d
+      width: 4
+    parents:
+    - ROOT_ID
+    - GRID_ID
+    - ROW-ArfX6gaYlwlcgD3hkncdh
+    type: CHART
+  CHART-explore-34-1:
+    children: []
+    id: CHART-explore-34-1
+    meta:
+      chartId: 34
+      height: 50
+      sliceName: HHI by Desk
+      uuid: 85b4e301-b1ff-4b3e-bfb7-82afd5fd6f32
+      width: 4
+    parents:
+    - ROOT_ID
+    - GRID_ID
+    - ROW-5_BeWBmgH-RdVunZckW_z
+    type: CHART
+  CHART-explore-35-1:
+    children: []
+    id: CHART-explore-35-1
+    meta:
+      chartId: 35
+      height: 50
+      sliceName: Concentration Detail Table
+      uuid: cb3ca249-9bc1-411e-8817-8adf8b57d9a6
+      width: 12
+    parents:
+    - ROOT_ID
+    - GRID_ID
+    - ROW-5_BeWBmgH-RdVunZckW_z
+    type: CHART
+  DASHBOARD_VERSION_KEY: v2
+  GRID_ID:
+    children:
+    - ROW-ArfX6gaYlwlcgD3hkncdh
+    - ROW-rdgTPxNXaB5Wd7LvNFEWF
+    - ROW-5_BeWBmgH-RdVunZckW_z
+    id: GRID_ID
+    parents:
+    - ROOT_ID
+    type: GRID
+  HEADER_ID:
+    id: HEADER_ID
+    meta:
+      text: Concentration Risk
+    type: HEADER
+  ROOT_ID:
+    children:
+    - GRID_ID
+    id: ROOT_ID
+    type: ROOT
+  ROW-5_BeWBmgH-RdVunZckW_z:
+    children:
+    - CHART-explore-35-1
+    id: ROW-5_BeWBmgH-RdVunZckW_z
+    meta:
+      '0': ROOT_ID
+      background: BACKGROUND_TRANSPARENT
+    parents:
+    - ROOT_ID
+    - GRID_ID
+    type: ROW
+  ROW-ArfX6gaYlwlcgD3hkncdh:
+    children:
+    - CHART-explore-29-1
+    - CHART-explore-32-1
+    - CHART-explore-34-1
+    id: ROW-ArfX6gaYlwlcgD3hkncdh
+    meta:
+      '0': ROOT_ID
+      background: BACKGROUND_TRANSPARENT
+    parents:
+    - ROOT_ID
+    - GRID_ID
+    type: ROW
+  ROW-rdgTPxNXaB5Wd7LvNFEWF:
+    children:
+    - CHART-explore-30-1
+    - CHART-explore-31-1
+    - CHART-explore-33-1
+    id: ROW-rdgTPxNXaB5Wd7LvNFEWF
+    meta:
+      '0': ROOT_ID
+      background: BACKGROUND_TRANSPARENT
+    parents:
+    - ROOT_ID
+    - GRID_ID
+    type: ROW
+metadata:
+  chart_configuration:
+    '29':
+      id: 29
+      crossFilters:
+        scope: global
+        chartsInScope:
+        - 30
+        - 31
+        - 32
+        - 33
+        - 34
+        - 35
+    '30':
+      id: 30
+      crossFilters:
+        scope: global
+        chartsInScope:
+        - 29
+        - 31
+        - 32
+        - 33
+        - 34
+        - 35
+    '31':
+      id: 31
+      crossFilters:
+        scope: global
+        chartsInScope:
+        - 29
+        - 30
+        - 32
+        - 33
+        - 34
+        - 35
+    '32':
+      id: 32
+      crossFilters:
+        scope: global
+        chartsInScope:
+        - 29
+        - 30
+        - 31
+        - 33
+        - 34
+        - 35
+    '33':
+      id: 33
+      crossFilters:
+        scope: global
+        chartsInScope:
+        - 29
+        - 30
+        - 31
+        - 32
+        - 34
+        - 35
+    '34':
+      id: 34
+      crossFilters:
+        scope: global
+        chartsInScope:
+        - 29
+        - 30
+        - 31
+        - 32
+        - 33
+        - 35
+    '35':
+      id: 35
+      crossFilters:
+        scope: global
+        chartsInScope:
+        - 29
+        - 30
+        - 31
+        - 32
+        - 33
+        - 34
+  global_chart_configuration:
+    scope:
+      rootPath:
+      - ROOT_ID
+      excluded: []
+    chartsInScope:
+    - 29
+    - 30
+    - 31
+    - 32
+    - 33
+    - 34
+    - 35
+  timed_refresh_immune_slices: []
+  expanded_slices: {}
+  refresh_frequency: 0
+  color_scheme: ''
+  label_colors: {}
+  cross_filters_enabled: true
+  default_filters: '{}'
+  shared_label_colors: {}
+  color_scheme_domain: []
+version: 1.0.0

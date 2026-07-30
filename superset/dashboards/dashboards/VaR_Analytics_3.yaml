@@ -1,0 +1,172 @@
+dashboard_title: VaR Analytics
+description: null
+css: ''
+slug: null
+certified_by: null
+certification_details: null
+published: true
+uuid: 9b43f19a-ed2f-4e2c-b099-7a9c89f2be0f
+position:
+  CHART-explore-6-1:
+    children: []
+    id: CHART-explore-6-1
+    meta:
+      chartId: 6
+      height: 50
+      sliceName: VaR - By Confidence Level
+      uuid: 05be7ba4-17ce-4d4a-8665-b4ba5d3452ce
+      width: 12
+    parents:
+    - ROOT_ID
+    - GRID_ID
+    - ROW-StBzhKhhgn82bZzVyLjqM
+    type: CHART
+  CHART-explore-7-1:
+    children: []
+    id: CHART-explore-7-1
+    meta:
+      chartId: 7
+      height: 50
+      sliceName: VaR - ES vs VaR Comparison
+      uuid: c517390d-88cf-417e-90b2-722ab6ef854d
+      width: 7
+    parents:
+    - ROOT_ID
+    - GRID_ID
+    - ROW-5ZXhfHa32gnWIOtVtVl-Q
+    type: CHART
+  CHART-explore-8-1:
+    children: []
+    id: CHART-explore-8-1
+    meta:
+      chartId: 8
+      height: 50
+      sliceName: VaR - 10-Day Regulatory VaR
+      uuid: 63fa408c-cef0-4781-b663-472ff21ab983
+      width: 5
+    parents:
+    - ROOT_ID
+    - GRID_ID
+    - ROW-5ZXhfHa32gnWIOtVtVl-Q
+    type: CHART
+  CHART-explore-9-1:
+    children: []
+    id: CHART-explore-9-1
+    meta:
+      chartId: 9
+      height: 50
+      sliceName: VaR - Detail Table
+      uuid: 7bf07422-278c-4bfb-9956-c0e831cd558c
+      width: 12
+    parents:
+    - ROOT_ID
+    - GRID_ID
+    - ROW-8nwlCZBsa5lB7MOJmkBEi
+    type: CHART
+  DASHBOARD_VERSION_KEY: v2
+  GRID_ID:
+    children:
+    - ROW-StBzhKhhgn82bZzVyLjqM
+    - ROW-5ZXhfHa32gnWIOtVtVl-Q
+    - ROW-8nwlCZBsa5lB7MOJmkBEi
+    id: GRID_ID
+    parents:
+    - ROOT_ID
+    type: GRID
+  HEADER_ID:
+    id: HEADER_ID
+    meta:
+      text: VaR Analytics
+    type: HEADER
+  ROOT_ID:
+    children:
+    - GRID_ID
+    id: ROOT_ID
+    type: ROOT
+  ROW-5ZXhfHa32gnWIOtVtVl-Q:
+    children:
+    - CHART-explore-7-1
+    - CHART-explore-8-1
+    id: ROW-5ZXhfHa32gnWIOtVtVl-Q
+    meta:
+      '0': ROOT_ID
+      background: BACKGROUND_TRANSPARENT
+    parents:
+    - ROOT_ID
+    - GRID_ID
+    type: ROW
+  ROW-8nwlCZBsa5lB7MOJmkBEi:
+    children:
+    - CHART-explore-9-1
+    id: ROW-8nwlCZBsa5lB7MOJmkBEi
+    meta:
+      background: BACKGROUND_TRANSPARENT
+    parents:
+    - ROOT_ID
+    - GRID_ID
+    type: ROW
+  ROW-StBzhKhhgn82bZzVyLjqM:
+    children:
+    - CHART-explore-6-1
+    id: ROW-StBzhKhhgn82bZzVyLjqM
+    meta:
+      '0': ROOT_ID
+      background: BACKGROUND_TRANSPARENT
+    parents:
+    - ROOT_ID
+    - GRID_ID
+    type: ROW
+metadata:
+  chart_configuration:
+    '6':
+      id: 6
+      crossFilters:
+        scope: global
+        chartsInScope:
+        - 7
+        - 8
+        - 9
+    '7':
+      id: 7
+      crossFilters:
+        scope: global
+        chartsInScope:
+        - 6
+        - 8
+        - 9
+    '8':
+      id: 8
+      crossFilters:
+        scope: global
+        chartsInScope:
+        - 6
+        - 7
+        - 9
+    '9':
+      id: 9
+      crossFilters:
+        scope: global
+        chartsInScope:
+        - 6
+        - 7
+        - 8
+  global_chart_configuration:
+    scope:
+      rootPath:
+      - ROOT_ID
+      excluded: []
+    chartsInScope:
+    - 6
+    - 7
+    - 8
+    - 9
+  timed_refresh_immune_slices: []
+  expanded_slices: {}
+  refresh_frequency: 0
+  color_scheme: ''
+  label_colors: {}
+  cross_filters_enabled: true
+  default_filters: '{}'
+  shared_label_colors: {}
+  color_scheme_domain: []
+version: 1.0.0

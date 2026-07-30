@@ -1,0 +1,162 @@
+dashboard_title: Profit and Loss Attribution
+description: null
+css: ''
+slug: null
+certified_by: null
+certification_details: null
+published: true
+uuid: 1b74a2f4-d6a8-4ec3-8746-7e1badd4e277
+position:
+  CHART-explore-14-1:
+    children: []
+    id: CHART-explore-14-1
+    meta:
+      chartId: 14
+      height: 50
+      sliceName: PnL - Actual by Desk
+      uuid: 1857ce11-cf8f-4edc-9037-a0577543ae51
+      width: 6
+    parents:
+    - ROOT_ID
+    - GRID_ID
+    - ROW-KOH4eY1EzIt9i2PYBpaN8
+    type: CHART
+  CHART-explore-15-1:
+    children: []
+    id: CHART-explore-15-1
+    meta:
+      chartId: 15
+      height: 50
+      sliceName: PnL - Actual vs Hypothetical
+      uuid: 11a3b99c-4104-42be-a4f4-6bb88b6a5a26
+      width: 6
+    parents:
+    - ROOT_ID
+    - GRID_ID
+    - ROW-KOH4eY1EzIt9i2PYBpaN8
+    type: CHART
+  CHART-explore-16-1:
+    children: []
+    id: CHART-explore-16-1
+    meta:
+      chartId: 16
+      height: 50
+      sliceName: PnL - Long vs Short
+      uuid: bab53e4e-c2db-48ab-97cb-532c4f2b688b
+      width: 6
+    parents:
+    - ROOT_ID
+    - GRID_ID
+    - ROW-KOH4eY1EzIt9i2PYBpaN8
+    type: CHART
+  CHART-explore-17-1:
+    children: []
+    id: CHART-explore-17-1
+    meta:
+      chartId: 17
+      height: 50
+      sliceName: PnL - Unexplained
+      uuid: 4a6bdf4e-2edd-4104-9c5d-7ef456c1c790
+      width: 6
+    parents:
+    - ROOT_ID
+    - GRID_ID
+    - ROW-7er5ix2kLyNuEdQv4jvNb
+    type: CHART
+  DASHBOARD_VERSION_KEY: v2
+  GRID_ID:
+    children:
+    - ROW-KOH4eY1EzIt9i2PYBpaN8
+    - ROW-7er5ix2kLyNuEdQv4jvNb
+    id: GRID_ID
+    parents:
+    - ROOT_ID
+    type: GRID
+  HEADER_ID:
+    id: HEADER_ID
+    meta:
+      text: Profit and Loss Attribution
+    type: HEADER
+  ROOT_ID:
+    children:
+    - GRID_ID
+    id: ROOT_ID
+    type: ROOT
+  ROW-7er5ix2kLyNuEdQv4jvNb:
+    children:
+    - CHART-explore-16-1
+    - CHART-explore-17-1
+    id: ROW-7er5ix2kLyNuEdQv4jvNb
+    meta:
+      '0': ROOT_ID
+      background: BACKGROUND_TRANSPARENT
+    parents:
+    - ROOT_ID
+    - GRID_ID
+    type: ROW
+  ROW-KOH4eY1EzIt9i2PYBpaN8:
+    children:
+    - CHART-explore-14-1
+    - CHART-explore-15-1
+    id: ROW-KOH4eY1EzIt9i2PYBpaN8
+    meta:
+      '0': ROOT_ID
+      background: BACKGROUND_TRANSPARENT
+    parents:
+    - ROOT_ID
+    - GRID_ID
+    type: ROW
+metadata:
+  chart_configuration:
+    '14':
+      id: 14
+      crossFilters:
+        scope: global
+        chartsInScope:
+        - 15
+        - 16
+        - 17
+    '15':
+      id: 15
+      crossFilters:
+        scope: global
+        chartsInScope:
+        - 14
+        - 16
+        - 17
+    '16':
+      id: 16
+      crossFilters:
+        scope: global
+        chartsInScope:
+        - 14
+        - 15
+        - 17
+    '17':
+      id: 17
+      crossFilters:
+        scope: global
+        chartsInScope:
+        - 14
+        - 15
+        - 16
+  global_chart_configuration:
+    scope:
+      rootPath:
+      - ROOT_ID
+      excluded: []
+    chartsInScope:
+    - 14
+    - 15
+    - 16
+    - 17
+  timed_refresh_immune_slices: []
+  expanded_slices: {}
+  refresh_frequency: 0
+  color_scheme: ''
+  label_colors: {}
+  cross_filters_enabled: true
+  default_filters: '{}'
+  shared_label_colors: {}
+  color_scheme_domain: []
+version: 1.0.0
