@@ -51,6 +51,7 @@ with DAG(
     
     DBT_DIR = '/opt/airflow/dbt/marketrisk'
     DBT_PROFILES = '/home/airflow/.dbt'
+    DBT_VARS = '\'{"run_date": "{{ ds }}"}\''
 
     # -- STEP 1: ingest raw data from Yahoo Finance (run in parallel)
     ingest_prices = BashOperator(
@@ -176,7 +177,7 @@ with DAG(
     # -- STEP 4: Build Silver layer
     dbt_silver = BashOperator(
         task_id='dbt_silver',
-        bash_command=f'cd {DBT_DIR} && dbt run --select silver --profiles-dir {DBT_PROFILES}',
+        bash_command=f'cd {DBT_DIR} && dbt run --select silver --profiles-dir {DBT_PROFILES} --vars {DBT_VARS}',
         sla=timedelta(minutes=20)
     )
 
@@ -190,14 +191,14 @@ with DAG(
     # -- STEP 6: Build Gold layer
     dbt_gold = BashOperator(
         task_id='dbt_gold',
-        bash_command=f'cd {DBT_DIR} && dbt run --select gold --profiles-dir {DBT_PROFILES}',
+        bash_command=f'cd {DBT_DIR} && dbt run --select gold --profiles-dir {DBT_PROFILES} --vars {DBT_VARS}',
         sla=timedelta(minutes=30)
     )
 
     # -- STEP 7: Test Gold layer
     dbt_test_gold = BashOperator(
         task_id='dbt_test_gold',
-        bash_command=f'cd {DBT_DIR} && dbt test --select gold --profiles-dir {DBT_PROFILES}',
+        bash_command=f'cd {DBT_DIR} && dbt test --select gold --profiles-dir {DBT_PROFILES} --vars {DBT_VARS}',
         sla=timedelta(minutes=10)
     )
 
