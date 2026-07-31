@@ -59,6 +59,7 @@ FROM (
 FILEFORMAT = CSV
 PATTERN = 'desk_limits.csv'
 FORMAT_OPTIONS ('header' = 'true', 'inferSchema' = 'false')
+COPY_OPTIONS ('force' = 'true')
 """
 
 
