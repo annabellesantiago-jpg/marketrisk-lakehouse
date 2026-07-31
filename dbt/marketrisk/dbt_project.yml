@@ -66,3 +66,6 @@ seeds:
         ticker:    varchar(50)
         sector:    varchar(100)
         geography: varchar(50)
+
+vars:
+  run_date: "1900-01-01"
