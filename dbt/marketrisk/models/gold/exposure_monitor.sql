@@ -130,7 +130,7 @@ status_applied AS (
 )
 
 SELECT
-  CURRENT_DATE()                      AS as_of_date,
+  CAST('{{ var("run_date") }}' AS DATE)                      AS as_of_date,
   desk,                              
   gross_exposure_usd,
   net_exposure_usd,

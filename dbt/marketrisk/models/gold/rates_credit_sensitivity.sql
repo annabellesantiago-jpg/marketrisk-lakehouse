@@ -232,7 +232,7 @@ sensitivity_with_metrics AS (
 )
 
 SELECT
-  CURRENT_DATE()                           AS calculation_date,
+  CAST('{{ var("run_date") }}' AS DATE)      AS calculation_date,
   s.desk,
   s.asset_class,
   s.tenor_bucket,

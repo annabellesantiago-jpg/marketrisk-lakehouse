@@ -201,7 +201,7 @@ desk_var AS (
     desk,
     SUM(var_99_usd) AS var_99_usd
   FROM {{ ref('var_daily') }}
-  WHERE calculation_date = CURRENT_DATE()
+  WHERE calculation_date = '{{ var("run_date") }}'
   GROUP BY desk
 ),
  
@@ -266,7 +266,7 @@ combined AS (
 )
  
 SELECT
-  CURRENT_DATE()                          AS calculation_date,
+  CAST('{{ var("run_date") }}' AS DATE)   AS calculation_date,
   desk,
   scenario_name,
   scenario_type,

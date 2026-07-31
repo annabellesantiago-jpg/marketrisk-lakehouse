@@ -67,7 +67,7 @@ today_exposure AS (
     {{ cast_to_double('limit_usd') }}          AS limit_usd,
     {{ cast_to_double('gross_exposure_usd') }}  AS gross_exposure_usd
   FROM {{ ref('exposure_monitor') }}
-  WHERE as_of_date = CURRENT_DATE()
+  WHERE as_of_date = '{{ var("run_date") }}'
 )
 
 {% if is_incremental() %}
@@ -96,7 +96,7 @@ continuing_breaches AS (
     ab.desk,
     ab.breach_start_date,
     CAST(NULL AS DATE)                                   AS breach_end_date,
-    {{ cast_to_int('DATEDIFF(CURRENT_DATE(), ab.breach_start_date)') }}    AS breach_duration_days,
+    CAST(DATEDIFF(CAST('{{ var("run_date") }}' AS DATE), ab.breach_start_date) AS INT)  AS breach_duration_days,
     TRUE                                                 AS is_active,
     ROUND(
       GREATEST(ab.peak_utilisation_pct, te.utilisation_pct),
@@ -104,7 +104,7 @@ continuing_breaches AS (
     )                                                    AS peak_utilisation_pct,
     CASE
       WHEN te.utilisation_pct >= ab.peak_utilisation_pct
-        THEN CURRENT_DATE()
+        THEN CAST('{{ var("run_date") }}' AS DATE)
       ELSE ab.peak_utilisation_date
     END                                                  AS peak_utilisation_date,
     ab.breach_start_utilisation_pct,
@@ -122,8 +122,8 @@ resolved_breaches AS (
   SELECT
     ab.desk,
     ab.breach_start_date,
-    CURRENT_DATE()                                       AS breach_end_date,
-    {{ cast_to_int('DATEDIFF(CURRENT_DATE(), ab.breach_start_date)') }}    AS breach_duration_days,
+    CAST('{{ var("run_date") }}' AS DATE)                                       AS breach_end_date,
+    CAST(DATEDIFF(CAST('{{ var("run_date") }}' AS DATE), ab.breach_start_date) AS INT)    AS breach_duration_days,
     FALSE                                                AS is_active,
     ab.peak_utilisation_pct,
     ab.peak_utilisation_date,
@@ -143,12 +143,12 @@ resolved_breaches AS (
 new_breaches AS (
   SELECT
     te.desk,
-    CURRENT_DATE()                                       AS breach_start_date,
+    CAST('{{ var("run_date") }}' AS DATE) AS breach_start_date,
     CAST(NULL AS DATE)                                   AS breach_end_date,
     {{ cast_to_int('1') }}                               AS breach_duration_days,
     TRUE                                                 AS is_active,
     ROUND(te.utilisation_pct, 4)                         AS peak_utilisation_pct,
-    CURRENT_DATE()                                       AS peak_utilisation_date,
+    CAST('{{ var("run_date") }}' AS DATE)                AS peak_utilisation_date,
     ROUND(te.utilisation_pct, 4)                         AS breach_start_utilisation_pct,
     te.limit_usd,
     te.gross_exposure_usd                                AS gross_exposure_at_start_usd,
@@ -196,12 +196,12 @@ FROM new_breaches
 -- ── FIRST RUN: insert all desks currently in breach ───────────────────────
 SELECT
   desk,
-  CURRENT_DATE()               AS breach_start_date,
+  CAST('{{ var("run_date") }}' AS DATE) AS breach_start_date,
   CAST(NULL AS DATE)           AS breach_end_date,
   {{ cast_to_int('1') }}       AS breach_duration_days,
   TRUE                         AS is_active,
   ROUND(utilisation_pct, 4)    AS peak_utilisation_pct,
-  CURRENT_DATE()               AS peak_utilisation_date,
+  CAST('{{ var("run_date") }}' AS DATE) AS peak_utilisation_date,
   ROUND(utilisation_pct, 4)    AS breach_start_utilisation_pct,
   limit_usd,
   gross_exposure_usd           AS gross_exposure_at_start_usd,

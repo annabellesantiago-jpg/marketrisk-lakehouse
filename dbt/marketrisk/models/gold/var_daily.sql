@@ -208,7 +208,7 @@ combined AS (
 )
 
 SELECT
-  CURRENT_DATE()                       AS calculation_date,
+  CAST('{{ var("run_date") }}' AS DATE)  AS calculation_date,
   desk,
   asset_class,
   {{ cast_to_int('position_count') }}  AS position_count,

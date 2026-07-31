@@ -51,7 +51,7 @@ today_pnl AS (
     {{ cast_to_double('hypothetical_pnl_usd') }} AS hypothetical_pnl_usd,
     {{ cast_to_double('unexplained_pnl_usd') }} AS unexplained_pnl_usd
   FROM {{ ref('pnl_attribution') }}
-  WHERE pnl_date = (SELECT MAX(pnl_date) FROM {{ ref('pnl_attribution') }})
+  WHERE pnl_date = '{{ var("run_date") }}'
 ),
 
 -- Step 2: Desk-level VaR — sum across all asset classes.
@@ -61,7 +61,7 @@ today_var AS (
     {{ cast_to_string('desk') }} AS desk,
     SUM(var_99_usd)         AS var_99_usd
   FROM {{ ref('var_daily') }}
-  WHERE calculation_date = (SELECT MAX(calculation_date) FROM {{ ref('var_daily') }})
+  WHERE calculation_date = '{{ var("run_date") }}'
   GROUP BY desk
 ),
 
@@ -71,7 +71,7 @@ today_exposure AS (
     {{ cast_to_string('desk') }} AS desk,
     {{ cast_to_double('utilisation_pct') }} AS utilisation_pct
   FROM {{ ref('exposure_monitor') }}
-  WHERE as_of_date = (SELECT MAX(as_of_date) FROM {{ ref('exposure_monitor') }})
+  WHERE as_of_date = '{{ var("run_date") }}'
 ),
  
 -- Step 4: Calculate performance metrics.
@@ -142,7 +142,7 @@ performance_flagged AS (
 )
 
 SELECT
-  (SELECT MAX(pnl_date) FROM {{ ref('pnl_attribution') }})         AS calculation_date,
+  CAST('{{ var("run_date") }}' AS DATE)  AS calculation_date,
   desk,
   actual_pnl_usd,
   var_99_usd,

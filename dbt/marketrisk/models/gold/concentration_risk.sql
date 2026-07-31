@@ -240,7 +240,7 @@ hhi AS (
 )
 
 SELECT
-  CURRENT_DATE()              AS as_of_date,
+  CAST('{{ var("run_date") }}' AS DATE)              AS as_of_date,
   r.desk,
   r.concentration_type,
   r.entity_name,
