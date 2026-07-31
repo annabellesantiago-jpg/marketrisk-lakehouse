@@ -49,6 +49,7 @@ ranked_dates AS (
       ORDER BY price_date DESC
     ) AS date_rank
   FROM {{ ref('prices_cleaned') }}
+  WHERE price_date <= CAST('{{ var("run_date") }}' AS DATE)
 ),
 
 -- Step 2: Pivot the two ranked rows into two columns per ticker.
@@ -107,7 +108,7 @@ position_pnl AS (
 desk_pnl AS (
   SELECT
     desk,
-    price_date                                          AS pnl_date,
+    CAST('{{ var("run_date") }}' AS DATE)               AS pnl_date,
     COUNT(DISTINCT trade_id)                            AS position_count,
     SUM(hypothetical_pnl_usd)                           AS hypothetical_pnl_usd,
     SUM(actual_pnl_usd)                                 AS actual_pnl_usd,
@@ -118,9 +119,7 @@ desk_pnl AS (
                THEN actual_pnl_usd ELSE 0 END) AS short_pnl_usd
   FROM position_pnl
   WHERE price_date IS NOT NULL
-  GROUP BY
-    desk,
-    price_date
+  GROUP BY desk
 )
 
 SELECT

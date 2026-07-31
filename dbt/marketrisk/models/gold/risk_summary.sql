@@ -92,7 +92,7 @@ var_summary AS (
     SUM(var_10day_97_5_usd)    AS var_10day_97_5_usd,
     SUM(es_97_5_usd)           AS es_97_5_usd
   FROM {{ ref('var_daily') }}
-  WHERE calculation_date = CURRENT_DATE()
+  WHERE calculation_date = '{{ var("run_date") }}'
   GROUP BY desk
 ),
 
@@ -110,7 +110,7 @@ exposure_today AS (
     limit_status,
     breach_flag
   FROM {{ ref('exposure_monitor') }}
-  WHERE as_of_date = CURRENT_DATE()
+  WHERE as_of_date = '{{ var("run_date") }}'
 ),
 
 -- Step 3: Pull today's P&L from pnl_attribution.
@@ -127,7 +127,7 @@ pnl_today AS (
     hypothetical_pnl_usd,
     unexplained_pnl_usd
   FROM {{ ref('pnl_attribution') }}
-  WHERE pnl_date = CURRENT_DATE()
+  WHERE pnl_date = '{{ var("run_date") }}'
 ),
 
 -- Step 4: Pull today's backtesting result from var_backtest.
@@ -140,7 +140,7 @@ backtest_today AS (
     rolling_250d_exceptions,
     basel_zone
   FROM {{ ref('var_backtest') }}
-  WHERE backtest_date = CURRENT_DATE()
+  WHERE backtest_date = '{{ var("run_date") }}'
 ),
 
 -- Step 5: Find the worst stress scenario per desk for today.
@@ -159,7 +159,7 @@ stress_ranked AS (
       ORDER BY stressed_pnl_usd ASC
     ) AS stress_rank
   FROM {{ ref('stress_testing') }}
-  WHERE calculation_date = CURRENT_DATE()
+  WHERE calculation_date = '{{ var("run_date") }}'
 ),
 
 worst_stress AS (
@@ -184,7 +184,7 @@ largest_cp AS (
     ROUND(pct_of_desk_total, 4) AS largest_counterparty_pct
   FROM {{ ref('concentration_risk') }}
   WHERE
-    as_of_date          = CURRENT_DATE()
+    as_of_date          = '{{ var("run_date") }}'
     AND concentration_type = 'COUNTERPARTY'
     AND desk_rank          = 1
 ),
@@ -272,7 +272,7 @@ combined AS (
 )
 
 SELECT
-  CURRENT_DATE()                           AS summary_date,
+  CAST('{{ var("run_date") }}' AS DATE) AS summary_date,
   desk,
   total_notional_usd,
   var_99_usd,
