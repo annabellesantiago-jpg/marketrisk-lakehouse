@@ -84,6 +84,15 @@ def reload_bronze() -> None:
             cursor.execute(TRUNCATE_SQL)
             logger.info("Running COPY INTO...")
             cursor.execute(COPY_INTO_SQL)
+            result = cursor.fetchall()
+            logger.info("COPY INTO result: %s", result)
+
+            # Verify rows loaded
+            cursor.execute(f"SELECT COUNT(*) FROM {DATABRICKS_CATALOG}.bronze.desk_limits")
+            count = cursor.fetchone()[0]
+            logger.info("Row count after COPY INTO: %d", count)
+            if count == 0:
+                raise RuntimeError("COPY INTO loaded 0 rows — check S3 access permissions in Databricks")
             logger.info("Bronze reload complete.")
 
 
