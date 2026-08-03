@@ -325,4 +325,4 @@ def list_s3_files(prefix: str = "") -> str:
 
 if __name__ == "__main__":
     logger.info("Starting MCP Server on port 8888...")
-    mcp.run(host="0.0.0.0", port=8888, transport="sse")
+    mcp.run(host="0.0.0.0", port=8888, transport="streamable-http")
