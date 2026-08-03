@@ -9,6 +9,16 @@ import boto3
 import os
 import requests
 import json
+import time
+import logging
+
+# Initialize logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s  %(levelname)-8s  %(name)s  %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
+logger = logging.getLogger("mcp-server")
 
 # Initialize FastMCP
 mcp = FastMCP()
@@ -21,7 +31,9 @@ AIRFLOW_PASSWORD = os.getenv("AIRFLOW_PASSWORD", "admin")
 DATABRICKS_HOST = os.getenv("DATABRICKS_HOST", "")  # e.g. adb-xxxx.azuredatabricks.net
 DATABRICKS_TOKEN = os.getenv("DATABRICKS_TOKEN", "")
 DATABRICKS_WAREHOUSE_ID = os.getenv("DATABRICKS_WAREHOUSE_ID", "")
-DATABRICKS_CATALOG = os.environ["DATABRICKS_CATALOG"]
+DATABRICKS_CATALOG = os.getenv("DATABRICKS_CATALOG", "")
+if not DATABRICKS_CATALOG:
+    logger.warning("DATABRICKS_CATALOG not set. Databricks tools will fail.")
 
 DAG_ID = "marketrisk_pipeline"  # Airflow DAG to monitor/control
 VALID_DESKS = {"FX DESK", "EQUITY DESK", "RATES DESK", "CREDIT DESK"}
@@ -49,8 +61,44 @@ def databricks_sql(statement: str) -> dict:
             "on_wait_timeout": "CONTINUE",
         },
         timeout=60,
-    ).json()
-    return resp
+    )
+    resp.raise_for_status()
+    result = resp.json()
+
+    # Poll if warehouse is cold and query hasn't finished yet
+    statement_id = result.get("statement_id")
+    poll_count = 0
+    while result.get("status", {}).get("state") in ("PENDING", "RUNNING"):
+        if poll_count >= 12:  # 2 minutes max (12 × 10s)
+            return {"error": "Query timed out after 2 minutes. Warehouse may still be starting."}
+        poll_count += 1
+        logger.info(f"Warehouse warming up... polling attempt {poll_count}/12")
+        time.sleep(10)
+        poll_resp = requests.get(
+            f"https://{DATABRICKS_HOST}/api/2.0/sql/statements/{statement_id}",
+            headers=headers,
+            timeout=30,
+        )
+        poll_resp.raise_for_status()
+        result = poll_resp.json()
+
+    if result.get("status", {}).get("state") == "FAILED":
+        error_msg = result.get("status", {}).get("error", {}).get("message", "Unknown error")
+        return {"error": f"Query failed: {error_msg}"}
+
+    return result
+
+
+def parse_databricks_result(resp: dict) -> list[dict]:
+    """Parse Databricks SQL API response into a clean list of row dicts."""
+    if "error" in resp:
+        return [resp]
+    try:
+        columns = [col["name"] for col in resp["manifest"]["schema"]["columns"]]
+        rows = resp.get("result", {}).get("data_array", [])
+        return [dict(zip(columns, row)) for row in rows]
+    except (KeyError, TypeError):
+        return [{"error": "Could not parse Databricks response", "raw": str(resp)[:500]}]
 
 # ── MONITORING TOOLS ──────────────────────────────────────────────────────────
 
@@ -123,7 +171,7 @@ def get_var_report(desk: str = "ALL") -> str:
     sql += " ORDER BY var_99_usd DESC"
  
     try:
-        return json.dumps(databricks_sql(sql), indent=2)
+        return json.dumps(parse_databricks_result(databricks_sql(sql)), indent=2)
     except Exception as e:
         return f"Could not query Databricks: {e}. Is the Gold layer built yet?"
  
@@ -143,7 +191,7 @@ def check_limit_breaches() -> str:
         ORDER BY utilisation_pct DESC
     """
     try:
-        result = databricks_sql(sql)
+        result = parse_databricks_result(databricks_sql(sql))
         return json.dumps(result, indent=2)
     except Exception as e:
         return f"Could not query Databricks: {e}"    
@@ -158,7 +206,7 @@ def get_pnl_summary(desk: str = "ALL") -> str:
         SELECT desk,
             ROUND(actual_pnl_usd, 2)        AS actual_pnl_usd,
             ROUND(hypothetical_pnl_usd, 2)  AS hypothetical_pnl_usd,
-            ROUND(actual_pnl_usd - hypothetical_pnl_usd, 2) AS unexplained_pnl_usd,
+            ROUND(unexplained_pnl_usd, 2) AS unexplained_pnl_usd,
             pnl_date
         FROM {DATABRICKS_CATALOG}.gold.pnl_attribution
         WHERE pnl_date = (SELECT MAX(pnl_date) FROM {DATABRICKS_CATALOG}.gold.pnl_attribution)
@@ -170,7 +218,7 @@ def get_pnl_summary(desk: str = "ALL") -> str:
     sql += " ORDER BY ABS(actual_pnl_usd - hypothetical_pnl_usd) DESC"
  
     try:
-        return json.dumps(databricks_sql(sql), indent=2)
+        return json.dumps(parse_databricks_result(databricks_sql(sql)), indent=2)
     except Exception as e:
         return f"Could not query Databricks: {e}"
     
@@ -191,12 +239,21 @@ def get_table_health() -> str:
         f"{DATABRICKS_CATALOG}.gold.pnl_attribution",
         f"{DATABRICKS_CATALOG}.gold.exposure_monitor",
         f"{DATABRICKS_CATALOG}.gold.risk_summary",
+        f"{DATABRICKS_CATALOG}.gold.var_backtest",
+        f"{DATABRICKS_CATALOG}.gold.stress_testing",
+        f"{DATABRICKS_CATALOG}.gold.concentration_risk",
+        f"{DATABRICKS_CATALOG}.gold.equity_sensitivity",
+        f"{DATABRICKS_CATALOG}.gold.fx_sensitivity",
+        f"{DATABRICKS_CATALOG}.gold.rates_credit_sensitivity",
+        f"{DATABRICKS_CATALOG}.gold.limit_breach_log",
+        f"{DATABRICKS_CATALOG}.gold.risk_adjusted_performance",
     ]
     results = {}
     for table in tables:
         try:
             resp = databricks_sql(f"SELECT COUNT(*) AS row_count FROM {table}")
-            results[table] = resp
+            parsed = parse_databricks_result(resp)
+            results[table] = parsed[0].get("row_count", "error") if parsed else "error"
         except Exception as e:
             results[table] = f"error: {e}"
     return json.dumps(results, indent=2)
@@ -204,16 +261,19 @@ def get_table_health() -> str:
 # ── OPERATIONAL TOOLS ─────────────────────────────────────────────────────────
 
 @mcp.tool()
-def trigger_pipeline_run(reason: str = "agent-triggered") -> str:
+def trigger_pipeline_run(reason: str="agent-triggered", run_date: str="") -> str:
     """
     Trigger a full pipeline run via the Airflow REST API.
     Use this when you want to kick off a fresh ingestion → transform → load cycle.
     Always state a reason so the audit log is clear.
     """
     try:
-        result = airflow_api(method="POST", path=f"dags/{DAG_ID}/dagRuns", data={
+        data = {
             "conf": {"triggered_by": "mcp_agent", "reason": reason}
-        })
+        }
+        if run_date:
+            data["logical_date"] = f"{run_date}T00:00:00+00:00"
+        result = airflow_api(method="POST", path=f"dags/{DAG_ID}/dagRuns", data=data)
         run_id = result.get("dag_run_id", "unknown")
         return f"Pipeline triggered successfully. Run ID: {run_id}. Monitor with get_pipeline_status()."
     except Exception as e:
@@ -264,5 +324,5 @@ def list_s3_files(prefix: str = "") -> str:
 # ── Entry point ───────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
-    print("Starting MCP Server on port 8888...")
+    logger.info("Starting MCP Server on port 8888...")
     mcp.run(host="0.0.0.0", port=8888, transport="sse")
