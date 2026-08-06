@@ -1,0 +1,120 @@
+name: CI — Unit Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # ─────────────────────────────────────────────────────────────────────
+  # Job 1: Python unit tests (pytest)
+  # Runs on every push and PR. No secrets required — all external
+  # calls (yfinance, boto3, requests) are mocked in the tests.
+  # Dummy env vars satisfy config.py imports without real credentials.
+  # ─────────────────────────────────────────────────────────────────────
+  python-tests:
+    runs-on: ubuntu-latest
+
+    env:
+      # Dummy values so ingestion/config.py doesn't crash on import.
+      # Tests mock all external calls — these are never used for real.
+      S3_BUCKET: ci-dummy-bucket
+      AWS_REGION: ap-southeast-2
+      AWS_ACCESS_KEY_ID: FAKE_KEY
+      AWS_SECRET_ACCESS_KEY: FAKE_SECRET
+      DATABRICKS_HOST: dummy.databricks.com
+      DATABRICKS_TOKEN: dapi_fake_token
+      DATABRICKS_HTTP_PATH: /sql/1.0/warehouses/fake
+      DATABRICKS_CATALOG: market_risk_dev
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Cache pip dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+          restore-keys: ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest
+
+      - name: Run Python unit tests
+        run: python -m pytest tests/ -v --tb=short
+
+  # ─────────────────────────────────────────────────────────────────────
+  # Job 2: dbt unit tests
+  # Runs only on push to main (not PRs) since it needs Databricks.
+  # Uses GitHub Secrets for credentials.
+  # ─────────────────────────────────────────────────────────────────────
+  dbt-tests:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: python-tests
+
+    env:
+      S3_BUCKET: ${{ secrets.S3_BUCKET }}
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
+      DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
+      DATABRICKS_HTTP_PATH: ${{ secrets.DATABRICKS_HTTP_PATH }}
+      DATABRICKS_CATALOG: ${{ secrets.DATABRICKS_CATALOG }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Cache pip dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+          restore-keys: ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install dbt-core==1.11.8 dbt-databricks==1.11.7
+
+      - name: Configure dbt profile
+        run: |
+          mkdir -p ~/.dbt
+          cat > ~/.dbt/profiles.yml << 'EOF'
+          marketrisk:
+            target: ci
+            outputs:
+              ci:
+                type: databricks
+                catalog: ${{ secrets.DATABRICKS_CATALOG }}
+                schema: gold
+                host: ${{ secrets.DATABRICKS_HOST }}
+                http_path: ${{ secrets.DATABRICKS_HTTP_PATH }}
+                token: ${{ secrets.DATABRICKS_TOKEN }}
+                threads: 4
+          EOF
+
+      - name: Install dbt packages
+        working-directory: dbt/marketrisk
+        run: dbt deps
+
+      - name: Run dbt unit tests
+        working-directory: dbt/marketrisk
+        run: dbt test --select "test_type:unit"
