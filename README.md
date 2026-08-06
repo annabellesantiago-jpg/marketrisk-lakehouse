@@ -18,14 +18,13 @@ The pipeline ingests live market data, generates synthetic trading positions, tr
 8. [Running the Pipeline](#running-the-pipeline)
 9. [Airflow Orchestration](#airflow-orchestration)
 10. [dbt Transformations](#dbt-transformations)
-11. [Data Quality](#data-quality)
+11. [Testing](#testing)
 12. [MCP Server (Agentic AI)](#mcp-server-agentic-ai)
 13. [Dashboards (Apache Superset)](#dashboards-apache-superset)
 14. [Monitoring (Grafana + Prometheus)](#monitoring-grafana--prometheus)
 15. [CI/CD (GitHub Actions)](#cicd-github-actions)
-16. [Documentation](#documentation)
-17. [Key Design Decisions](#key-design-decisions)
-18. [Skills Demonstrated](#skills-demonstrated)
+16. [Key Design Decisions](#key-design-decisions)
+17. [Skills Demonstrated](#skills-demonstrated)
 
 ---
 
@@ -45,8 +44,6 @@ The system follows a six-stage pipeline:
 
 Data flows from Yahoo Finance and synthetic generators, through S3 with Hive-style date partitions, into Databricks Unity Catalog as Delta tables. dbt Core handles all Silver and Gold transformations. Apache Airflow orchestrates the daily run, and downstream consumers (Superset dashboards, Claude Desktop via MCP) query the Gold layer directly.
 
-Refer to the Technical Specification (`MarketRisk_TechnicalSpec_v1.x.docx`) and the draw.io diagrams in `docs/drawio/` for detailed architecture visuals.
-
 ---
 
 ## Tech Stack
@@ -59,9 +56,10 @@ Refer to the Technical Specification (`MarketRisk_TechnicalSpec_v1.x.docx`) and 
 | Transform | dbt Core 1.11, dbt-databricks | 14 SQL models + 2 seeds across Silver and Gold |
 | Orchestration | Apache Airflow 2.x | Daily DAG with 9 tasks, SLA monitoring, Slack alerts |
 | Dashboards | Apache Superset | 7 risk dashboards with RBAC and row-level security |
-| Agentic AI | FastMCP 3.4.5, Claude Desktop | 9 MCP tools for natural-language risk queries |
+| Agentic AI | FastMCP, Claude Desktop | 9 MCP tools for natural-language risk queries |
 | Monitoring | Grafana, Prometheus, StatsD Exporter | Pipeline health dashboards, metrics scraping |
-| CI/CD | GitHub Actions | Automated desk_limits loading on CSV change |
+| Testing | pytest, dbt unit tests | 65 Python tests + 7 dbt unit tests |
+| CI/CD | GitHub Actions | Automated testing on push/PR + desk_limits loading on CSV change |
 | Infrastructure | Docker Compose (10 services) | Single-command local deployment |
 
 ---
@@ -120,45 +118,55 @@ Twelve dbt `incremental` models using `MERGE` strategy. History accumulates over
 
 ```
 marketrisk-lakehouse/
-├── ingestion/                  # Python ingestion scripts
-│   ├── config.py               # Centralised config (env vars, paths)
-│   ├── fetch_market_data.py    # Yahoo Finance OHLCV fetcher
-│   ├── fetch_reference_data.py # FX rates generator
-│   ├── generate_positions.py   # Synthetic positions (4 desks)
-│   ├── load_desk_limits.py     # Desk limits loader (CI/CD triggered)
-│   └── s3_utils.py             # S3 upload with Hive partitioning
-├── dbt/marketrisk/             # dbt project
-│   ├── models/
-│   │   ├── silver/             # 2 cleaning/enrichment models + _silver.yml
-│   │   └── gold/               # 12 business models + _gold.yml
-│   ├── seeds/                  # stress_scenarios.csv, ticker_classifications.csv
-│   ├── models/sources.yml      # Bronze source definitions
-│   └── dbt_project.yml
+├── .github/workflows/          # CI/CD pipelines
+│   ├── ci.yml                  # Unit tests on push/PR + dbt tests on merge
+│   ├── load_desk_limits.yml    # Auto-load limits on CSV change
+│   └── setup_environment.yml   # Manual environment validation
 ├── airflow/                    # Orchestration
 │   ├── dags/marketrisk_pipeline.py  # 9-task DAG
 │   ├── Dockerfile
 │   └── requirements.txt
+├── data/raw/reference/         # Reference data (desk_limits.csv)
+├── databricks/notebooks/       # Databricks setup & Bronze ingest notebooks
+├── dbt/marketrisk/             # dbt project
+│   ├── models/
+│   │   ├── sources.yml         # Bronze source definitions
+│   │   ├── _unit_tests.yml     # dbt unit tests (7 tests)
+│   │   ├── silver/             # 2 cleaning/enrichment models + _silver.yml
+│   │   └── gold/               # 12 business models + _gold.yml
+│   ├── macros/                 # cast_to_double, cast_to_int, cast_to_string
+│   ├── seeds/                  # stress_scenarios.csv, ticker_classifications.csv
+│   └── dbt_project.yml
+├── docs/drawio/                # Architecture diagrams (8 draw.io files)
+├── ingestion/                  # Python ingestion scripts
+│   ├── config.py               # Centralised config (env vars, constants)
+│   ├── fetch_market_data.py    # Yahoo Finance OHLCV fetcher with retry
+│   ├── fetch_reference_data.py # FX rates from latest price files
+│   ├── generate_positions.py   # Synthetic trading book (4 desks, 300 positions)
+│   ├── load_desk_limits.py     # Desk limits loader (CI/CD triggered)
+│   └── s3_utils.py             # S3 upload/read helpers
 ├── mcp-server/                 # Agentic AI layer
 │   ├── server.py               # FastMCP server (9 tools)
 │   ├── Dockerfile
 │   └── requirements.txt
+├── monitoring/                 # Observability
+│   ├── grafana/                # Dashboard JSON + provisioning
+│   └── prometheus/prometheus.yml
 ├── superset/                   # Dashboard layer
 │   ├── dashboards/             # Exported dashboard JSON configs
 │   ├── Dockerfile
 │   ├── superset_config.py
 │   └── superset-init.sh
-├── monitoring/                 # Observability
-│   ├── grafana/                # Dashboard JSON + provisioning
-│   └── prometheus/prometheus.yml
-├── databricks/notebooks/       # Databricks setup & exploration notebooks
-├── .github/workflows/          # CI/CD pipelines
-│   ├── load_desk_limits.yml
-│   └── setup_environment.yml
-├── dq_checks.py                # Standalone DQ validation (7 categories)
+├── tests/                      # Python unit tests (pytest)
+│   ├── conftest.py             # Path configuration
+│   ├── test_generate_positions.py   # 28 tests — book shape, IDs, ISIN rules
+│   ├── test_fetch_market_data.py    # 16 tests — ticker normalisation, retry
+│   ├── test_fetch_reference_data.py # 9 tests — FX rates, USD inclusion
+│   └── test_server.py              # 12 tests — Databricks parser, Airflow API
 ├── docker-compose.yml          # 10-service stack
+├── pyproject.toml              # pytest configuration
 ├── requirements.txt            # Python dependencies
-├── .env.example                # Template for secrets
-└── docs/                       # Architecture diagrams (draw.io + PNG)
+└── README.md
 ```
 
 ---
@@ -242,12 +250,8 @@ dbt seed --profiles-dir .
 # 4. dbt run (Silver + Gold)
 dbt run --profiles-dir .
 
-# 5. dbt test
+# 5. dbt test (schema + unit tests)
 dbt test --profiles-dir .
-
-# 6. Standalone DQ checks
-cd ../..
-python dq_checks.py
 ```
 
 ### Full Refresh
@@ -293,28 +297,46 @@ Features: SLA monitoring with configurable thresholds, Slack alerts on failure o
 - **14 SQL models**: 2 Silver (table materialisation) + 12 Gold (incremental with MERGE)
 - **2 seeds**: `stress_scenarios.csv` (24 rows, 6 macro scenarios) and `ticker_classifications.csv` (11 tickers)
 - **Schema tests**: Defined in `_silver.yml` and `_gold.yml` covering not_null, unique, accepted_values, and relationships
+- **Unit tests**: 7 dbt unit tests in `_unit_tests.yml` validating transformation logic (ticker normalisation, deduplication, FX conversion, direction multiplier, traffic-light breach logic)
 - **Incremental strategy**: Gold models use `merge` on declared `unique_key`; `on_schema_change: fail` prevents silent column drift
 - **`run_date` variable**: Passed via `--vars '{"run_date": "2025-07-15"}'` for point-in-time runs; defaults to `1900-01-01` (processes all dates)
 
 ---
 
-## Data Quality
+## Testing
 
-### dbt Tests
+### Python Unit Tests (pytest)
 
-Schema-level tests defined in `_gold.yml` and `_silver.yml` cover column-level constraints (not_null, unique, accepted_values, relationships).
+65 tests across 4 test files, run via `python -m pytest tests/ -v`:
 
-### Standalone DQ Checks (`dq_checks.py`)
+| File | Tests | What it covers |
+|------|-------|---------------|
+| `test_generate_positions.py` | 28 | Book shape, trade IDs, desk-asset class integrity, ISIN/CUSIP rules, notional ranges, direction, counterparties, traders, dates, determinism, `validate()` edge cases |
+| `test_fetch_market_data.py` | 16 | Ticker-to-filename normalisation, `fetch_ticker` with mocked yfinance (retry logic, FX volume NULL), `file_exists_in_s3` with mocked boto3 |
+| `test_fetch_reference_data.py` | 9 | `get_live_fx_rates` with mocked S3, `generate_fx_rates` output (USD at 1.0, correct structure) |
+| `test_server.py` | 12 | `parse_databricks_result` parsing, `airflow_api` with mocked requests, `VALID_DESKS` constant, `databricks_sql` polling logic |
 
-Seven categories of validation run against the Gold layer:
+All external calls (yfinance, boto3, requests) are mocked — no credentials or network access needed.
 
-1. **Row counts** across all layers (Bronze, Silver, Gold)
-2. **Null and referential integrity** checks
-3. **Date consistency** validation
-4. **Business logic** validation (VaR ordering, limit calculations)
-5. **Cross-model consistency** (positions count matches across models)
-6. **Completeness** checks (all desks represented, all tickers covered)
-7. **Timeliness** checks (data freshness)
+### dbt Unit Tests
+
+7 unit tests in `models/_unit_tests.yml`, run via `dbt test --select "test_type:unit"`:
+
+| Test | Model | What it validates |
+|------|-------|------------------|
+| `test_prices_cleaned_null_filter_and_ticker_normalization` | prices_cleaned | NULL Close filtered, EURUSD=X &rarr; EURUSD, HSBA.L &rarr; HSBA_L |
+| `test_prices_cleaned_deduplication` | prices_cleaned | Keeps latest `_ingested_at` per ticker+date |
+| `test_positions_enriched_long_usd` | positions_enriched | LONG direction_multiplier=1, notional_usd = notional &times; fx_rate |
+| `test_positions_enriched_short_eur` | positions_enriched | SHORT direction_multiplier=-1, negative net_exposure_usd |
+| `test_exposure_monitor_green` | exposure_monitor | Utilisation &lt; 80% &rarr; GREEN, no flags |
+| `test_exposure_monitor_breach` | exposure_monitor | Utilisation &ge; 100% &rarr; RED, breach_flag=true |
+| `test_exposure_monitor_amber_warning` | exposure_monitor | Utilisation 80-99% &rarr; AMBER, warning_flag=true |
+
+dbt unit tests use mock inputs (Given/Expect pattern) and execute against Databricks.
+
+### dbt Schema Tests
+
+Column-level constraints defined in `_silver.yml` and `_gold.yml` covering not_null, unique, accepted_values, and relationships. These run against actual warehouse data during `dbt test`.
 
 ---
 
@@ -323,7 +345,7 @@ Seven categories of validation run against the Gold layer:
 The MCP server enables Claude Desktop to query risk data and operate the pipeline using natural language.
 
 **Transport:** streamable-http on port 8888
-**Framework:** FastMCP 3.4.5
+**Framework:** FastMCP
 
 ### Tools
 
@@ -386,26 +408,23 @@ RBAC and row-level security are configured so that desk-level users only see the
 
 ## CI/CD (GitHub Actions)
 
-### `load_desk_limits.yml`
+### `ci.yml` — Unit Tests
 
-Triggers when `data/raw/reference/desk_limits.csv` changes on push. Loads the updated limits into Databricks Bronze via the ingestion script.
+Triggers on every push and PR to `main`. Two jobs:
 
-**Secrets required** (8): `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION`, `S3_BUCKET`, `DATABRICKS_HOST`, `DATABRICKS_TOKEN`, `DATABRICKS_WAREHOUSE_ID`, `DATABRICKS_HTTP_PATH`
+**Python tests** — runs pytest with mocked external calls (no secrets needed). Fires on every push and PR.
 
-### `setup_environment.yml`
+**dbt unit tests** — runs `dbt test --select "test_type:unit"` against Databricks. Fires only on merge to `main` (requires secrets).
 
-Validates environment setup and dependency installation.
+### `load_desk_limits.yml` — Data Reload
 
----
+Triggers when `data/raw/reference/desk_limits.csv` changes on push to `main`. Loads the updated limits into S3 and Databricks Bronze.
 
-## Documentation
+### `setup_environment.yml` — Environment Validation
 
-| Document | Description |
-|----------|------------|
-| `MarketRisk_BRD_v1.x.docx` | Business Requirements Document — scope, user stories, acceptance criteria, BCBS 239 compliance matrix |
-| `MarketRisk_TechnicalSpec_v1.x.docx` | Technical Specification — architecture, data models, API contracts, deployment guide |
-| `docs/drawio/` | draw.io architecture diagrams (E2E, ingestion flow, DAG, medallion, gold lineage, serving layer, observability, governance) |
-| `docs/generated_diagrams/` | Exported PNG versions of all diagrams |
+Manual trigger for validating environment setup and dependency installation.
+
+**Secrets required** (8): `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION`, `S3_BUCKET`, `DATABRICKS_HOST`, `DATABRICKS_TOKEN`, `DATABRICKS_HTTP_PATH`, `DATABRICKS_CATALOG`
 
 ---
 
@@ -426,12 +445,11 @@ Validates environment setup and dependency installation.
 ## Skills Demonstrated
 
 - **Data Engineering**: End-to-end pipeline design, Medallion architecture, Delta Lake, COPY INTO, incremental models
-- **SQL & dbt**: Complex analytical SQL (window functions, CTEs, MERGE), dbt project structure, schema tests, seeds, incremental strategy
+- **SQL & dbt**: Complex analytical SQL (window functions, CTEs, MERGE), dbt project structure, schema tests, unit tests, seeds, incremental strategy
 - **Cloud & Infrastructure**: AWS S3, Databricks Unity Catalog, Docker Compose (10 services), environment configuration
 - **Orchestration**: Airflow DAG design, task dependencies, SLA monitoring, Slack alerting, retry logic
-- **Data Quality**: Multi-layer validation, business rule checks, referential integrity, freshness monitoring
+- **Testing**: pytest with mocking (65 tests), dbt unit tests with Given/Expect pattern (7 tests), dbt schema tests
 - **BI & Visualisation**: Apache Superset dashboards, RBAC, row-level security
 - **AI/ML Integration**: MCP server development, Claude Desktop integration, natural-language data access
-- **DevOps**: GitHub Actions CI/CD, Docker containerisation, Prometheus + Grafana observability
+- **DevOps**: GitHub Actions CI/CD (automated testing on push/PR), Docker containerisation, Prometheus + Grafana observability
 - **Domain Knowledge**: Market risk (VaR, Greeks, stress testing, BCBS 239, FRTB), banking regulatory requirements
-- **Documentation**: BRD and Tech Spec authoring to enterprise standards
