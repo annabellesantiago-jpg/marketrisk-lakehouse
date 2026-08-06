@@ -1,0 +1,211 @@
+version: 2
+
+unit_tests:
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # SILVER: prices_cleaned
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  # Test 1: Rows with NULL Close are filtered out, and ticker is normalised
+  #         EURUSD=X → EURUSD,  HSBA.L → HSBA_L
+  - name: test_prices_cleaned_null_filter_and_ticker_normalization
+    model: prices_cleaned
+    description: >
+      Rows with NULL Close, Open, High, Low, or ticker must be excluded.
+      Ticker is normalised: remove '=X' suffix, replace '.' with '_'.
+    given:
+      - input: source('bronze', 'market_prices')
+        rows:
+          - {Date: "2026-08-01", Open: 1.10, High: 1.12, Low: 1.09, Close: 1.11,
+             Volume: 0, ticker: "EURUSD=X", fetched_at: "2026-08-01T12:00:00",
+             _ingested_at: "2026-08-01T12:00:00"}
+          # NULL Close — should be filtered out
+          - {Date: "2026-08-02", Open: 1.10, High: 1.12, Low: 1.09, Close: null,
+             Volume: 0, ticker: "EURUSD=X", fetched_at: "2026-08-02T12:00:00",
+             _ingested_at: "2026-08-02T12:00:00"}
+          # Dot ticker — HSBA.L → HSBA_L
+          - {Date: "2026-08-01", Open: 640, High: 645, Low: 638, Close: 642,
+             Volume: 500000, ticker: "HSBA.L", fetched_at: "2026-08-01T12:00:00",
+             _ingested_at: "2026-08-01T12:00:00"}
+    expect:
+      rows:
+        - {price_date: "2026-08-01", close_price: 1.11, ticker: "EURUSD"}
+        - {price_date: "2026-08-01", close_price: 642.0, ticker: "HSBA_L"}
+
+  # Test 2: Deduplication — keeps only the row with the latest _ingested_at
+  #         per ticker + price_date combination
+  - name: test_prices_cleaned_deduplication
+    model: prices_cleaned
+    description: >
+      When the same ticker+date appears twice (e.g. COPY INTO rerun),
+      keep only the most recently ingested row.
+    given:
+      - input: source('bronze', 'market_prices')
+        rows:
+          # First load — older _ingested_at
+          - {Date: "2026-08-01", Open: 148, High: 152, Low: 147, Close: 150.0,
+             Volume: 1000000, ticker: "AAPL", fetched_at: "2026-08-01T12:00:00",
+             _ingested_at: "2026-08-01T12:00:00"}
+          # Second load — newer _ingested_at, corrected close price
+          - {Date: "2026-08-01", Open: 148, High: 152, Low: 147, Close: 151.5,
+             Volume: 1000000, ticker: "AAPL", fetched_at: "2026-08-01T14:00:00",
+             _ingested_at: "2026-08-01T14:00:00"}
+    expect:
+      rows:
+        - {price_date: "2026-08-01", close_price: 151.5, ticker: "AAPL"}
+
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # SILVER: positions_enriched
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  # Test 3: LONG position — direction_multiplier = 1, correct FX conversion
+  - name: test_positions_enriched_long_usd
+    model: positions_enriched
+    description: >
+      A LONG USD position should have direction_multiplier=1,
+      notional_usd = notional * 1.0, and positive net_exposure_usd.
+    given:
+      - input: source('bronze', 'positions')
+        rows:
+          - {trade_id: "EQ-00001", desk: "Equity Desk", book_id: "EQ_LONG_BOOK",
+             trader_id: "T-EQ-001", counterparty: "Goldman Sachs",
+             asset_class: "Equity", instrument_type: "EQUITY", ticker: "AAPL",
+             isin: "US0378331005", cusip: "037833100", direction: "LONG",
+             notional: 1000000, currency: "USD",
+             trade_date: "2026-01-15", maturity_date: "2027-01-15",
+             generated_at: "2026-08-01T00:00:00"}
+      - input: source('bronze', 'fx_rates')
+        rows:
+          - {currency: "USD", rate_vs_usd: 1.0}
+      - input: ref('prices_cleaned')
+        rows:
+          - {price_date: "2026-08-01", open_price: 148, high_price: 152,
+             low_price: 147, close_price: 150, volume: 1000000,
+             ticker: "AAPL", fetched_at: "2026-08-01T12:00:00",
+             _silver_loaded_at: "2026-08-01T12:00:00"}
+    expect:
+      rows:
+        - {trade_id: "EQ-00001", direction: "LONG", notional: 1000000.0,
+           fx_rate_vs_usd: 1.0, notional_usd: 1000000.0,
+           current_price: 150.0, direction_multiplier: 1,
+           net_exposure_usd: 1000000.0}
+
+  # Test 4: SHORT EUR position — direction_multiplier = -1, FX conversion applied
+  - name: test_positions_enriched_short_eur
+    model: positions_enriched
+    description: >
+      A SHORT EUR position should have direction_multiplier=-1,
+      notional_usd = notional * fx_rate, and negative net_exposure_usd.
+    given:
+      - input: source('bronze', 'positions')
+        rows:
+          - {trade_id: "FX-00001", desk: "FX Desk", book_id: "FX_SPOT_BOOK",
+             trader_id: "T-FX-001", counterparty: "Deutsche Bank",
+             asset_class: "FX", instrument_type: "FX_FORWARD", ticker: "EURUSD",
+             isin: null, cusip: null, direction: "SHORT",
+             notional: 2000000, currency: "EUR",
+             trade_date: "2026-06-01", maturity_date: "2026-12-01",
+             generated_at: "2026-08-01T00:00:00"}
+      - input: source('bronze', 'fx_rates')
+        rows:
+          - {currency: "EUR", rate_vs_usd: 1.1}
+      - input: ref('prices_cleaned')
+        rows:
+          - {price_date: "2026-08-01", open_price: 1.09, high_price: 1.11,
+             low_price: 1.08, close_price: 1.10, volume: 0,
+             ticker: "EURUSD", fetched_at: "2026-08-01T12:00:00",
+             _silver_loaded_at: "2026-08-01T12:00:00"}
+    expect:
+      rows:
+        - {trade_id: "FX-00001", direction: "SHORT", notional: 2000000.0,
+           currency: "EUR", fx_rate_vs_usd: 1.1,
+           notional_usd: 2200000.0, direction_multiplier: -1,
+           net_exposure_usd: -2200000.0}
+
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # GOLD: exposure_monitor
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  # Test 5: GREEN status — utilisation < 80%, no flags raised
+  - name: test_exposure_monitor_green
+    model: exposure_monitor
+    description: >
+      Gross exposure well under limit → GREEN status,
+      warning_flag=false, breach_flag=false.
+    overrides:
+      vars:
+        run_date: "2026-08-01"
+    given:
+      - input: ref('positions_enriched')
+        rows:
+          - {trade_id: "FX-00001", desk: "FX Desk", notional_usd: 5000000,
+             net_exposure_usd: 5000000, direction: "LONG"}
+          - {trade_id: "FX-00002", desk: "FX Desk", notional_usd: 3000000,
+             net_exposure_usd: -3000000, direction: "SHORT"}
+      - input: source('bronze', 'desk_limits')
+        rows:
+          - {desk: "FX Desk", limit_usd: 20000000,
+             approved_date: "2026-01-01", _ingested_at: "2026-01-01T00:00:00"}
+    expect:
+      rows:
+        - {desk: "FX Desk", gross_exposure_usd: 8000000.0,
+           net_exposure_usd: 2000000.0, limit_usd: 20000000.0,
+           utilisation_pct: 40.0, limit_status: "GREEN",
+           warning_flag: false, breach_flag: false,
+           position_count: 2}
+
+  # Test 6: RED / breach — utilisation >= 100%
+  - name: test_exposure_monitor_breach
+    model: exposure_monitor
+    description: >
+      Gross exposure exceeds limit → RED status,
+      warning_flag=false, breach_flag=true.
+    overrides:
+      vars:
+        run_date: "2026-08-01"
+    given:
+      - input: ref('positions_enriched')
+        rows:
+          - {trade_id: "EQ-00001", desk: "Equity Desk", notional_usd: 15000000,
+             net_exposure_usd: 15000000, direction: "LONG"}
+          - {trade_id: "EQ-00002", desk: "Equity Desk", notional_usd: 10000000,
+             net_exposure_usd: -10000000, direction: "SHORT"}
+      - input: source('bronze', 'desk_limits')
+        rows:
+          - {desk: "Equity Desk", limit_usd: 20000000,
+             approved_date: "2026-01-01", _ingested_at: "2026-01-01T00:00:00"}
+    expect:
+      rows:
+        - {desk: "Equity Desk", gross_exposure_usd: 25000000.0,
+           net_exposure_usd: 5000000.0, limit_usd: 20000000.0,
+           utilisation_pct: 125.0, limit_status: "RED",
+           warning_flag: false, breach_flag: true,
+           position_count: 2}
+
+  # Test 7: AMBER / warning — utilisation between 80% and 100%
+  - name: test_exposure_monitor_amber_warning
+    model: exposure_monitor
+    description: >
+      Gross exposure at 90% of limit → AMBER status,
+      warning_flag=true, breach_flag=false.
+    overrides:
+      vars:
+        run_date: "2026-08-01"
+    given:
+      - input: ref('positions_enriched')
+        rows:
+          - {trade_id: "RT-00001", desk: "Rates Desk", notional_usd: 9000000,
+             net_exposure_usd: 9000000, direction: "LONG"}
+      - input: source('bronze', 'desk_limits')
+        rows:
+          - {desk: "Rates Desk", limit_usd: 10000000,
+             approved_date: "2026-01-01", _ingested_at: "2026-01-01T00:00:00"}
+    expect:
+      rows:
+        - {desk: "Rates Desk", gross_exposure_usd: 9000000.0,
+           net_exposure_usd: 9000000.0, limit_usd: 10000000.0,
+           utilisation_pct: 90.0, limit_status: "AMBER",
+           warning_flag: true, breach_flag: false,
+           position_count: 1}
